@@ -101,6 +101,16 @@ struct napi_env__ {
     }
   }
 
+  template <typename T>
+  inline void CallbackIntoModule(T&& call) {
+    CallIntoModule(call, [](napi_env env, v8::Local<v8::Value> local_err) {
+      // If there was an unhandled exception in the complete callback,
+      // report it as a fatal exception. (There is no JavaScript on the
+      // callstack that can possibly handle it.)
+      v8impl::trigger_fatal_exception(env, local_err);
+    });
+  }
+
   virtual void CallFinalizer(napi_finalize cb, void* data, void* hint) {
     v8::HandleScope handle_scope(isolate);
     CallIntoModule([&](napi_env env) {

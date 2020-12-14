@@ -312,7 +312,7 @@ class ThreadSafeFunction : public node::AsyncResource {
           v8::Local<v8::Function>::New(env->isolate, ref);
         js_callback = v8impl::JsValueFromV8LocalValue(js_cb);
       }
-      env->CallIntoModule([&](napi_env env) {
+      env->CallbackIntoModule([&](napi_env env) {
         call_js_cb(env, js_callback, context, data);
       });
     }
@@ -322,7 +322,7 @@ class ThreadSafeFunction : public node::AsyncResource {
     v8::HandleScope scope(env->isolate);
     if (finalize_cb) {
       CallbackScope cb_scope(this);
-      env->CallIntoModule([&](napi_env env) {
+      env->CallbackIntoModule([&](napi_env env) {
         finalize_cb(env, finalize_data, context);
       });
     }
@@ -1043,13 +1043,8 @@ class Work : public node::AsyncResource, public node::ThreadPoolWork {
 
     CallbackScope callback_scope(this);
 
-    _env->CallIntoModule([&](napi_env env) {
+    _env->CallbackIntoModule([&](napi_env env) {
       _complete(env, ConvertUVErrorCode(status), _data);
-    }, [](napi_env env, v8::Local<v8::Value> local_err) {
-      // If there was an unhandled exception in the complete callback,
-      // report it as a fatal exception. (There is no JavaScript on the
-      // callstack that can possibly handle it.)
-      v8impl::trigger_fatal_exception(env, local_err);
     });
 
     // Note: Don't access `work` after this point because it was
