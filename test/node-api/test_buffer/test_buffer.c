@@ -20,6 +20,15 @@ static void noopDeleter(napi_env env, void* data, void* finalize_hint) {
   deleterCallCount++;
 }
 
+static void malignDeleter(napi_env env, void* data, void* finalize_hint) {
+  NAPI_ASSERT_RETURN_VOID(env, data != NULL && strcmp(data, theText) == 0, "invalid data");
+  napi_value js_finalizer = (napi_value)finalize_hint;
+  napi_value recv;
+  NAPI_CALL_RETURN_VOID(env, napi_get_global(env, &recv));
+  NAPI_CALL_RETURN_VOID(env, napi_call_function(env, recv, js_finalizer, 0, NULL, NULL));
+  deleterCallCount++;
+}
+
 static napi_value newBuffer(napi_env env, napi_callback_info info) {
   napi_value theBuffer;
   char* theCopy;
@@ -119,6 +128,28 @@ static napi_value staticBuffer(napi_env env, napi_callback_info info) {
   return theBuffer;
 }
 
+static napi_value malignFinalizerBuffer(napi_env env, napi_callback_info info) {
+  size_t argc = 1;
+  napi_value args[1];
+  NAPI_CALL(env, napi_get_cb_info(env, info, &argc, args, NULL, NULL));
+  NAPI_ASSERT(env, argc == 1, "Wrong number of arguments");
+  napi_value finalizer = args[0];
+  napi_valuetype finalizer_valuetype;
+  NAPI_CALL(env, napi_typeof(env, finalizer, &finalizer_valuetype));
+  NAPI_ASSERT(env, finalizer_valuetype == napi_function, "Wrong type of first argument");
+
+  napi_value theBuffer;
+  NAPI_CALL(
+      env,
+      napi_create_external_buffer(env,
+                                  sizeof(theText),
+                                  (void*)theText,
+                                  malignDeleter,
+                                  finalizer,  // finalize_hint
+                                  &theBuffer));
+  return theBuffer;
+}
+
 static napi_value Init(napi_env env, napi_value exports) {
   napi_value theValue;
 
@@ -134,6 +165,7 @@ static napi_value Init(napi_env env, napi_value exports) {
     DECLARE_NAPI_PROPERTY("bufferHasInstance", bufferHasInstance),
     DECLARE_NAPI_PROPERTY("bufferInfo", bufferInfo),
     DECLARE_NAPI_PROPERTY("staticBuffer", staticBuffer),
+    DECLARE_NAPI_PROPERTY("malignFinalizerBuffer", malignFinalizerBuffer),
   };
 
   NAPI_CALL(env, napi_define_properties(
