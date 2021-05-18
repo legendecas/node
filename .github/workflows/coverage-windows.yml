@@ -11,6 +11,7 @@ on:
     branches:
       - master
       - main
+      - node-report/pipe-win
     paths-ignore:
       - 'doc/**'
       - 'deps/**'
