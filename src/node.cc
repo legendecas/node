@@ -477,6 +477,10 @@ MaybeLocal<Value> StartExecution(Environment* env, StartExecutionCallback cb) {
     return StartExecution(env, "internal/main/worker_thread");
   }
 
+  if (per_process::cli_options->build_snapshot) {
+    return StartExecution(env, "internal/main/mksnapshot");
+  }
+
   std::string first_argv;
   if (env->argv().size() > 1) {
     first_argv = env->argv()[1];
@@ -1143,34 +1147,95 @@ int Start(int argc, char** argv) {
   if (result.early_return) {
     return result.exit_code;
   }
+  auto cleanup_process = OnScopeLeave([&]() { TearDownOncePerProcess(); });
 
-  {
-    Isolate::CreateParams params;
-    const std::vector<size_t>* indices = nullptr;
-    const EnvSerializeInfo* env_info = nullptr;
-    bool use_node_snapshot =
-        per_process::cli_options->per_isolate->node_snapshot;
-    if (use_node_snapshot) {
+  // --build-snapshot is on.
+  if (per_process::cli_options->build_snapshot) {
+    if (result.args.size() < 2) {
+      fprintf(stderr,
+              "--build-snapshot only supports starting the process "
+              "with an entry point script.\n"
+              "Usage: %s --build-snapshot <...args> "
+              "/path/to/entry.js\n",
+              result.args[0].c_str());
+      return 1;
+    }
+
+    std::string snapshot_blob_path;
+    if (!per_process::cli_options->snapshot_blob.empty()) {
+      snapshot_blob_path = per_process::cli_options->snapshot_blob;
+    } else {
+      snapshot_blob_path = std::string("snapshot.blob");
+    }
+
+    SnapshotData data;
+    int exit_code = node::SnapshotBuilder::Generate(
+        &data, result.args[1], result.args, result.exec_args);
+    if (exit_code == 0) {
+      FILE* fp = fopen(snapshot_blob_path.c_str(), "w");
+      if (fp == nullptr) {
+        fprintf(stderr, "Cannot open %s\n", snapshot_blob_path.c_str());
+        return 1;
+      }
+
+      delete[] data.blob.data;
+      data.ToBlob(fp);
+      fclose(fp);
+    }
+    return exit_code;
+  }
+
+  // --build-snapshot is off, load the snapshot if --no-node-snapshot isn't set.
+  SnapshotData snapshot_data;
+  Isolate::CreateParams params;
+  // TODO(joyeecheung): return SnapshotData from the embedded blob and get rid
+  // of these separated structures.
+  const std::vector<size_t>* indices = nullptr;
+  const EnvSerializeInfo* env_info = nullptr;
+
+  bool use_node_snapshot = per_process::cli_options->per_isolate->node_snapshot;
+  bool use_user_snapshot = !per_process::cli_options->snapshot_blob.empty();
+
+  if (use_node_snapshot) {
+    // If --snapshot-blob is specified, read the snapshot from disk.
+    if (use_user_snapshot) {
+      std::string filename = per_process::cli_options->snapshot_blob;
+      FILE* fp = fopen(filename.c_str(), "r");
+      if (fp == nullptr) {
+        fprintf(stderr, "Cannot open %s", filename.c_str());
+        return 1;
+      }
+
+      SnapshotData::FromBlob(&snapshot_data, fp);
+      params.snapshot_blob = &(snapshot_data.blob);
+      indices = &(snapshot_data.isolate_data_indices);
+      env_info = &(snapshot_data.env_info);
+      fclose(fp);
+    } else {
+      // If --snapshot-blob is unspecified, try to use the default snapshot
+      // embedded into the binary.
       v8::StartupData* blob = NodeMainInstance::GetEmbeddedSnapshotBlob();
-      if (blob != nullptr) {
+      if (blob != nullptr) {  // The binary is built without embedded snapshot.
         params.snapshot_blob = blob;
         indices = NodeMainInstance::GetIsolateDataIndices();
         env_info = NodeMainInstance::GetEnvSerializeInfo();
       }
     }
-    uv_loop_configure(uv_default_loop(), UV_METRICS_IDLE_TIME);
-
-    NodeMainInstance main_instance(&params,
-                                   uv_default_loop(),
-                                   per_process::v8_platform.Platform(),
-                                   result.args,
-                                   result.exec_args,
-                                   indices);
-    result.exit_code = main_instance.Run(env_info);
   }
 
-  TearDownOncePerProcess();
-  return result.exit_code;
+  uv_loop_configure(uv_default_loop(), UV_METRICS_IDLE_TIME);
+
+  NodeMainInstance main_instance(&params,
+                                 uv_default_loop(),
+                                 per_process::v8_platform.Platform(),
+                                 result.args,
+                                 result.exec_args,
+                                 indices);
+  int exit_code = main_instance.Run(env_info);
+  if (use_user_snapshot) {
+    delete snapshot_data.blob.data;
+  }
+  return exit_code;
 }
 
 int Stop(Environment* env) {

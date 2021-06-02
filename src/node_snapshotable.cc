@@ -11,19 +11,30 @@
 #include "node_file.h"
 #include "node_internals.h"
 #include "node_main_instance.h"
+#include "node_metadata.h"
 #include "node_process.h"
 #include "node_v8.h"
 #include "node_v8_platform-inl.h"
 
+#if HAVE_INSPECTOR
+#include "inspector/worker_inspector.h"  // ParentInspectorHandle
+#endif
+
 namespace node {
 
 using v8::Context;
+using v8::Function;
+using v8::FunctionCallbackInfo;
 using v8::HandleScope;
 using v8::Isolate;
 using v8::Local;
+using v8::MaybeLocal;
 using v8::Object;
+using v8::ScriptCompiler;
+using v8::ScriptOrigin;
 using v8::SnapshotCreator;
 using v8::StartupData;
+using v8::String;
 using v8::TryCatch;
 using v8::Value;
 
@@ -447,8 +458,15 @@ size_t FileWriter::Write(const EnvSerializeInfo& data) {
 void SnapshotData::ToBlob(FILE* out) {
   FileWriter w(out);
   w.Debug("SnapshotData::ToBlob()\n");
+
+  // Metadata
   w.Debug("Write magic %" PRIx64 "\n", kMagic);
   w.Write<uint64_t>(kMagic);
+  w.Debug("Write version %s\n", NODE_VERSION);
+  w.WriteString(NODE_VERSION);
+  w.Debug("Write arch %s\n", NODE_ARCH);
+  w.WriteString(NODE_ARCH);
+
   w.Write<v8::StartupData>(blob);
   w.Debug("Write isolate_data_indices");
   w.WriteVector<size_t>(isolate_data_indices);
@@ -458,25 +476,32 @@ void SnapshotData::ToBlob(FILE* out) {
 void SnapshotData::FromBlob(SnapshotData* out, FILE* in) {
   FileReader r(in);
   r.Debug("SnapshotData::FromBlob()\n");
+
+  // Metadata
   uint64_t magic = r.Read<uint64_t>();
   r.Debug("Read magic %" PRIx64 "\n", magic);
   CHECK_EQ(magic, kMagic);
+  std::string version = r.ReadString();
+  r.Debug("Read version %s\n", version.c_str());
+  CHECK_EQ(version, NODE_VERSION);
+  std::string arch = r.ReadString();
+  r.Debug("Read arch %s\n", arch.c_str());
+  CHECK_EQ(arch, NODE_ARCH);
+
   out->blob = r.Read<v8::StartupData>();
   out->isolate_data_indices = r.ReadVector<size_t>();
   out->env_info = r.Read<EnvSerializeInfo>();
 }
 
 template <typename T>
-void WriteVector(std::ostringstream* ss, const T* vec, size_t size) {
+void WriteVector(std::ostream* ss, const T* vec, size_t size) {
   for (size_t i = 0; i < size; i++) {
     *ss << std::to_string(vec[i]) << (i == size - 1 ? '\n' : ',');
   }
 }
 
-std::string FormatBlob(SnapshotData* data) {
-  std::ostringstream ss;
-
-  ss << R"(#include <cstddef>
+void FormatBlob(std::ostream& out, SnapshotData* data) {
+  out << R"(#include <cstddef>
 #include "env.h"
 #include "node_main_instance.h"
 #include "v8.h"
@@ -487,31 +512,31 @@ namespace node {
 
 static const char blob_data[] = {
 )";
-  WriteVector(&ss, data->blob.data, data->blob.raw_size);
-  ss << R"(};
+  WriteVector(&out, data->blob.data, data->blob.raw_size);
+  out << R"(};
 
 static const int blob_size = )"
-     << data->blob.raw_size << R"(;
+      << data->blob.raw_size << R"(;
 static v8::StartupData blob = { blob_data, blob_size };
 )";
 
-  ss << R"(v8::StartupData* NodeMainInstance::GetEmbeddedSnapshotBlob() {
+  out << R"(v8::StartupData* NodeMainInstance::GetEmbeddedSnapshotBlob() {
   return &blob;
 }
 
 static const std::vector<size_t> isolate_data_indices {
 )";
-  WriteVector(&ss,
+  WriteVector(&out,
               data->isolate_data_indices.data(),
               data->isolate_data_indices.size());
-  ss << R"(};
+  out << R"(};
 
 const std::vector<size_t>* NodeMainInstance::GetIsolateDataIndices() {
   return &isolate_data_indices;
 }
 
 static const EnvSerializeInfo env_info )"
-     << data->env_info << R"(;
+      << data->env_info << R"(;
 
 const EnvSerializeInfo* NodeMainInstance::GetEnvSerializeInfo() {
   return &env_info;
@@ -519,26 +544,51 @@ const EnvSerializeInfo* NodeMainInstance::GetEnvSerializeInfo() {
 
 }  // namespace node
 )";
-
-  return ss.str();
 }
 
-void SnapshotBuilder::Generate(SnapshotData* out,
-                               const std::vector<std::string> args,
-                               const std::vector<std::string> exec_args) {
+int SnapshotBuilder::Generate(SnapshotData* out,
+                              const std::string& entry_file,
+                              const std::vector<std::string> args,
+                              const std::vector<std::string> exec_args) {
   Isolate* isolate = Isolate::Allocate();
   isolate->SetCaptureStackTraceForUncaughtExceptions(
       true, 10, v8::StackTrace::StackTraceOptions::kDetailed);
+
   per_process::v8_platform.Platform()->RegisterIsolate(isolate,
                                                        uv_default_loop());
-  std::unique_ptr<NodeMainInstance> main_instance;
-  std::string result;
+  auto cleanup_isolate = OnScopeLeave([&]() {
+    per_process::v8_platform.Platform()->UnregisterIsolate(isolate);
+  });
 
   {
     const std::vector<intptr_t>& external_references =
         NodeMainInstance::CollectExternalReferences();
     SnapshotCreator creator(isolate, external_references.data());
-    Environment* env;
+
+    std::unique_ptr<NodeMainInstance> main_instance = nullptr;
+    // We need a pointer to env here because we need to check the queues in
+    // the Environment and dispose it after the context is serialized.
+    Environment* env = nullptr;
+    // Must be done while the snapshot creator isolate is entered i.e. the
+    // creator is still alive.
+    auto cleanup_env_and_instance = OnScopeLeave([&]() {
+      if (env != nullptr) {
+        // We cannot resurrect the handles from the snapshot, so make sure that
+        // no handles are left open in the environment after the blob is created
+        // (which should trigger a GC and close all handles that can be closed).
+        if (!env->req_wrap_queue()->IsEmpty() ||
+            !env->handle_wrap_queue()->IsEmpty() ||
+            per_process::enabled_debug_list.enabled(
+                DebugCategory::MKSNAPSHOT)) {
+          PrintLibuvHandleInformation(env->event_loop(), stderr);
+        }
+        FreeEnvironment(env);
+      }
+      if (main_instance != nullptr) {
+        main_instance->Dispose();
+      }
+    });
+
     {
       main_instance =
           NodeMainInstance::Create(isolate,
@@ -549,22 +599,31 @@ void SnapshotBuilder::Generate(SnapshotData* out,
 
       HandleScope scope(isolate);
       creator.SetDefaultContext(Context::New(isolate));
+
+      // Collect the isolate data indices.
       out->isolate_data_indices =
           main_instance->isolate_data()->Serialize(&creator);
 
-      // Run the per-context scripts
+      // Run the per-context scripts.
       Local<Context> context;
       {
         TryCatch bootstrapCatch(isolate);
         context = NewContext(isolate);
         if (bootstrapCatch.HasCaught()) {
           PrintCaughtException(isolate, context, bootstrapCatch);
-          abort();
+          return 1;
         }
       }
-      Context::Scope context_scope(context);
 
-      // Create the environment
+      Context::Scope context_scope(context);
+      TryCatch bootstrapCatch(isolate);
+      auto print_exception = OnScopeLeave([&]() {
+        if (bootstrapCatch.HasCaught()) {
+          PrintCaughtException(isolate, context, bootstrapCatch);
+        }
+      });
+
+      // Create the environment.
       env = new Environment(main_instance->isolate_data(),
                             context,
                             args,
@@ -572,14 +631,40 @@ void SnapshotBuilder::Generate(SnapshotData* out,
                             nullptr,
                             node::EnvironmentFlags::kDefaultFlags,
                             {});
+
+#if HAVE_INSPECTOR
+      env->InitializeInspector({});
+#endif
+
       // Run scripts in lib/internal/bootstrap/
       {
-        TryCatch bootstrapCatch(isolate);
-        v8::MaybeLocal<Value> result = env->RunBootstrapping();
-        if (bootstrapCatch.HasCaught()) {
-          PrintCaughtException(isolate, context, bootstrapCatch);
+        MaybeLocal<Value> result = env->RunBootstrapping();
+        if (result.IsEmpty()) {
+          return 1;
         }
-        result.ToLocalChecked();
+      }
+
+      // Run the entry point file
+      if (!entry_file.empty()) {
+        // TODO(joyee): we could use the result for something special, like
+        // setting up initializers that should be invoked at snapshot
+        // dehydration.
+        MaybeLocal<Value> result =
+            LoadEnvironment(env, StartExecutionCallback{});
+        if (result.IsEmpty()) {
+          return 1;
+        }
+
+        // TODO(joyee): right now running the loop in the snapshot builder
+        // could intrudoces inconsistencies in JS land that need to be
+        // synchronized again after snapshot restoration.
+        int exit_code = SpinEventLoop(env).FromMaybe(1);
+        if (exit_code == 0 && bootstrapCatch.HasCaught()) {
+          exit_code = 1;
+        }
+        if (exit_code != 0) {
+          return exit_code;
+        }
       }
 
       if (per_process::enabled_debug_list.enabled(DebugCategory::MKSNAPSHOT)) {
@@ -595,42 +680,37 @@ void SnapshotBuilder::Generate(SnapshotData* out,
       CHECK_EQ(index, NodeMainInstance::kNodeContextIndex);
     }
 
-    // Must be out of HandleScope
+    // Must be out of HandleScope before we can serialize the snapshot.
     out->blob =
-        creator.CreateBlob(SnapshotCreator::FunctionCodeHandling::kClear);
+        creator.CreateBlob(SnapshotCreator::FunctionCodeHandling::kKeep);
 
     // We must be able to rehash the blob when we restore it or otherwise
     // the hash seed would be fixed by V8, introducing a vulnerability.
     CHECK(out->blob.CanBeRehashed());
-
-    // We cannot resurrect the handles from the snapshot, so make sure that
-    // no handles are left open in the environment after the blob is created
-    // (which should trigger a GC and close all handles that can be closed).
-    if (!env->req_wrap_queue()->IsEmpty()
-        || !env->handle_wrap_queue()->IsEmpty()
-        || per_process::enabled_debug_list.enabled(DebugCategory::MKSNAPSHOT)) {
-      PrintLibuvHandleInformation(env->event_loop(), stderr);
+    if (!env->req_wrap_queue()->IsEmpty()) {
+      fprintf(stderr, "env->req_wrap_queue() isn't empty\n");
+      return 6;
     }
-    CHECK(env->req_wrap_queue()->IsEmpty());
-    CHECK(env->handle_wrap_queue()->IsEmpty());
-
-    // Must be done while the snapshot creator isolate is entered i.e. the
-    // creator is still alive.
-    FreeEnvironment(env);
-    main_instance->Dispose();
+    if (!env->handle_wrap_queue()->IsEmpty()) {
+      fprintf(stderr, "env->handle_wrap_queue() isn't empty\n");
+      return 6;
+    }
   }
 
-  per_process::v8_platform.Platform()->UnregisterIsolate(isolate);
+  return 0;
 }
 
-std::string SnapshotBuilder::Generate(
-    const std::vector<std::string> args,
-    const std::vector<std::string> exec_args) {
+int SnapshotBuilder::Generate(std::ostream& out,
+                              const std::string& entry_file,
+                              const std::vector<std::string> args,
+                              const std::vector<std::string> exec_args) {
   SnapshotData data;
-  Generate(&data, args, exec_args);
-  std::string result = FormatBlob(&data);
-  delete[] data.blob.data;
-  return result;
+  int exit_code = Generate(&data, entry_file, args, exec_args);
+  if (exit_code == 0) {
+    FormatBlob(out, &data);
+    delete[] data.blob.data;
+  }
+  return exit_code;
 }
 
 SnapshotableObject::SnapshotableObject(Environment* env,
@@ -751,4 +831,57 @@ void SerializeBindingData(Environment* env,
   });
 }
 
+namespace mksnapshot {
+
+static void CompileSnapshotMain(const FunctionCallbackInfo<Value>& args) {
+  CHECK(args[0]->IsString());
+  Local<String> filename = args[0].As<String>();
+  Local<String> source = args[1].As<String>();
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  ScriptOrigin origin(isolate, filename, 0, 0, true);
+  // TODO(joyee): do we need all of these? Maybe we would want a less
+  // internal version of them.
+  std::vector<Local<String>> parameters = {
+      FIXED_ONE_BYTE_STRING(isolate, "require"),
+      FIXED_ONE_BYTE_STRING(isolate, "__filename"),
+      FIXED_ONE_BYTE_STRING(isolate, "__dirname"),
+  };
+  ScriptCompiler::Source script_source(source, origin);
+  Local<Function> fn;
+  if (ScriptCompiler::CompileFunctionInContext(context,
+                                               &script_source,
+                                               parameters.size(),
+                                               parameters.data(),
+                                               0,
+                                               nullptr,
+                                               ScriptCompiler::kEagerCompile)
+          .ToLocal(&fn)) {
+    args.GetReturnValue().Set(fn);
+  }
+}
+
+static void Initialize(Local<Object> target,
+                       Local<Value> unused,
+                       Local<Context> context,
+                       void* priv) {
+  Environment* env = Environment::GetCurrent(context);
+  Isolate* isolate = context->GetIsolate();
+  env->SetMethod(target, "compileSnapshotMain", CompileSnapshotMain);
+  target
+      ->Set(context,
+            FIXED_ONE_BYTE_STRING(isolate, "cleanups"),
+            v8::Array::New(isolate))
+      .Check();
+}
+
+static void RegisterExternalReferences(ExternalReferenceRegistry* registry) {
+  registry->Register(CompileSnapshotMain);
+  registry->Register(MarkBootstrapComplete);
+}
+}  // namespace mksnapshot
 }  // namespace node
+
+NODE_MODULE_CONTEXT_AWARE_INTERNAL(mksnapshot, node::mksnapshot::Initialize)
+NODE_MODULE_EXTERNAL_REFERENCE(mksnapshot,
+                               node::mksnapshot::RegisterExternalReferences)

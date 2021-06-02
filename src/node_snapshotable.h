@@ -4,6 +4,7 @@
 
 #if defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 
+#include <ostream>
 #include "base_object.h"
 #include "util.h"
 
@@ -125,11 +126,18 @@ bool IsSnapshotableType(FastStringKey key);
 
 class SnapshotBuilder {
  public:
-  static std::string Generate(const std::vector<std::string> args,
-                              const std::vector<std::string> exec_args);
-  static void Generate(SnapshotData* out,
-                       const std::vector<std::string> args,
-                       const std::vector<std::string> exec_args);
+  // Generate the snapshot into out.
+  // entry_file should be the content of the UTF-8 encoded entry files.
+  static int Generate(SnapshotData* out,
+                      const std::string& entry_file,
+                      const std::vector<std::string> args,
+                      const std::vector<std::string> exec_args);
+  // Similar to the version above, but writes C++ code that embeds the
+  // generated snapshot data into a Node.js binary to the out stream.
+  static int Generate(std::ostream& out,
+                      const std::string& entry_file,
+                      const std::vector<std::string> args,
+                      const std::vector<std::string> exec_args);
 };
 }  // namespace node
 

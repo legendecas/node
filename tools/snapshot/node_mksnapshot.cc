@@ -24,13 +24,8 @@ int main(int argc, char* argv[]) {
 
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <path/to/output.cc>\n";
-    return 1;
-  }
-
-  std::ofstream out;
-  out.open(argv[1], std::ios::out | std::ios::binary);
-  if (!out.is_open()) {
-    std::cerr << "Cannot open " << argv[1] << "\n";
+    std::cerr << "       " << argv[0] << " --build-snapshot "
+              << "<path/to/script.js> <path/to/output.cc>\n";
     return 1;
   }
 
@@ -49,13 +44,18 @@ int main(int argc, char* argv[]) {
   CHECK(!result.early_return);
   CHECK_EQ(result.exit_code, 0);
 
-  {
-    std::string snapshot =
-        node::SnapshotBuilder::Generate(result.args, result.exec_args);
-    out << snapshot;
-    out.close();
+  std::string output_file = result.args[1];
+  std::ofstream out;
+  out.open(output_file, std::ios::out | std::ios::binary);
+  if (!out.is_open()) {
+    std::cerr << "Cannot open " << output_file << "\n";
+    return 1;
   }
 
+  int exit_code = node::SnapshotBuilder::Generate(
+      out, std::string(), result.args, result.exec_args);
+  out.close();
+
   node::TearDownOncePerProcess();
-  return 0;
+  return exit_code;
 }
