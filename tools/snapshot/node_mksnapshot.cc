@@ -44,7 +44,14 @@ int main(int argc, char* argv[]) {
   CHECK(!result.early_return);
   CHECK_EQ(result.exit_code, 0);
 
-  std::string output_file = result.args[1];
+  std::string snapshot_main;
+  std::string output_file;
+  if (node::per_process::cli_options->build_snapshot) {
+    snapshot_main = result.args[1];
+    output_file = result.args[2];
+  } else {
+    output_file = result.args[1];
+  }
   std::ofstream out;
   out.open(output_file, std::ios::out | std::ios::binary);
   if (!out.is_open()) {
@@ -53,7 +60,7 @@ int main(int argc, char* argv[]) {
   }
 
   int exit_code = node::SnapshotBuilder::Generate(
-      out, std::string(), result.args, result.exec_args);
+      out, snapshot_main, result.args, result.exec_args);
   out.close();
 
   node::TearDownOncePerProcess();
