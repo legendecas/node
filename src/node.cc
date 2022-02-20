@@ -176,12 +176,12 @@ MaybeLocal<Value> ExecuteBootstrapper(Environment* env,
   EscapableHandleScope scope(env->isolate());
   MaybeLocal<Function> maybe_fn =
       NativeModuleEnv::LookupAndCompile(env->context(), id, parameters, env);
+  CHECK(!maybe_fn.IsEmpty());
 
   Local<Function> fn;
-  if (!maybe_fn.ToLocal(&fn)) {
-    return MaybeLocal<Value>();
-  }
+  CHECK(maybe_fn.ToLocal(&fn));
 
+printf("%s\n", id);
   MaybeLocal<Value> result = fn->Call(env->context(),
                                       Undefined(env->isolate()),
                                       arguments->size(),
@@ -312,7 +312,7 @@ MaybeLocal<Value> Environment::BootstrapInternalLoaders() {
       NewFunctionTemplate(binding::GetInternalBinding)
           ->GetFunction(context())
           .ToLocalChecked(),
-      primordials()};
+      v8::Undefined(isolate_)};
 
   // Bootstrap internal loaders
   Local<Value> loader_exports;
@@ -337,62 +337,64 @@ MaybeLocal<Value> Environment::BootstrapInternalLoaders() {
 }
 
 MaybeLocal<Value> Environment::BootstrapNode() {
-  EscapableHandleScope scope(isolate_);
+  // EscapableHandleScope scope(isolate_);
 
-  Local<Object> global = context()->Global();
-  // TODO(joyeecheung): this can be done in JS land now.
-  global->Set(context(), FIXED_ONE_BYTE_STRING(isolate_, "global"), global)
-      .Check();
+  // Local<Object> global = context()->Global();
+  // // TODO(joyeecheung): this can be done in JS land now.
+  // global->Set(context(), FIXED_ONE_BYTE_STRING(isolate_, "global"), global)
+  //     .Check();
 
-  // process, require, internalBinding, primordials
-  std::vector<Local<String>> node_params = {
-      process_string(),
-      require_string(),
-      internal_binding_string(),
-      primordials_string()};
-  std::vector<Local<Value>> node_args = {
-      process_object(),
-      native_module_require(),
-      internal_binding_loader(),
-      primordials()};
+  // // process, require, internalBinding, primordials
+  // std::vector<Local<String>> node_params = {
+  //     process_string(),
+  //     require_string(),
+  //     internal_binding_string(),
+  //     primordials_string()};
+  // std::vector<Local<Value>> node_args = {
+  //     process_object(),
+  //     native_module_require(),
+  //     internal_binding_loader(),
+  //     primordials()};
 
-  MaybeLocal<Value> result = ExecuteBootstrapper(
-      this, "internal/bootstrap/node", &node_params, &node_args);
+  // MaybeLocal<Value> result = ExecuteBootstrapper(
+  //     this, "internal/bootstrap/node", &node_params, &node_args);
 
-  if (result.IsEmpty()) {
-    return scope.EscapeMaybe(result);
-  }
+  // if (result.IsEmpty()) {
+  //   return scope.EscapeMaybe(result);
+  // }
 
-  // TODO(joyeecheung): skip these in the snapshot building for workers.
-  auto thread_switch_id =
-      is_main_thread() ? "internal/bootstrap/switches/is_main_thread"
-                       : "internal/bootstrap/switches/is_not_main_thread";
-  result =
-      ExecuteBootstrapper(this, thread_switch_id, &node_params, &node_args);
+  // // TODO(joyeecheung): skip these in the snapshot building for workers.
+  // auto thread_switch_id =
+  //     is_main_thread() ? "internal/bootstrap/switches/is_main_thread"
+  //                      : "internal/bootstrap/switches/is_not_main_thread";
+  // result =
+  //     ExecuteBootstrapper(this, thread_switch_id, &node_params, &node_args);
 
-  if (result.IsEmpty()) {
-    return scope.EscapeMaybe(result);
-  }
+  // if (result.IsEmpty()) {
+  //   return scope.EscapeMaybe(result);
+  // }
 
-  auto process_state_switch_id =
-      owns_process_state()
-          ? "internal/bootstrap/switches/does_own_process_state"
-          : "internal/bootstrap/switches/does_not_own_process_state";
-  result = ExecuteBootstrapper(
-      this, process_state_switch_id, &node_params, &node_args);
+  // auto process_state_switch_id =
+  //     owns_process_state()
+  //         ? "internal/bootstrap/switches/does_own_process_state"
+  //         : "internal/bootstrap/switches/does_not_own_process_state";
+  // result = ExecuteBootstrapper(
+  //     this, process_state_switch_id, &node_params, &node_args);
 
-  if (result.IsEmpty()) {
-    return scope.EscapeMaybe(result);
-  }
+  // if (result.IsEmpty()) {
+  //   return scope.EscapeMaybe(result);
+  // }
 
-  Local<String> env_string = FIXED_ONE_BYTE_STRING(isolate_, "env");
-  Local<Object> env_var_proxy;
-  if (!CreateEnvVarProxy(context(), isolate_).ToLocal(&env_var_proxy) ||
-      process_object()->Set(context(), env_string, env_var_proxy).IsNothing()) {
-    return MaybeLocal<Value>();
-  }
+  // Local<String> env_string = FIXED_ONE_BYTE_STRING(isolate_, "env");
+  // Local<Object> env_var_proxy;
+  // if (!CreateEnvVarProxy(context(), isolate_).ToLocal(&env_var_proxy) ||
+  //     process_object()->Set(context(), env_string, env_var_proxy).IsNothing()) {
+  //   return MaybeLocal<Value>();
+  // }
 
-  return scope.EscapeMaybe(result);
+  // return scope.EscapeMaybe(result);
+
+  return v8::Undefined(isolate_);
 }
 
 MaybeLocal<Value> Environment::RunBootstrapping() {
@@ -430,6 +432,7 @@ void MarkBootstrapComplete(const FunctionCallbackInfo<Value>& args) {
 static
 MaybeLocal<Value> StartExecution(Environment* env, const char* main_script_id) {
   EscapableHandleScope scope(env->isolate());
+  printf("main %s\n", main_script_id);
   CHECK_NOT_NULL(main_script_id);
 
   std::vector<Local<String>> parameters = {
@@ -443,7 +446,7 @@ MaybeLocal<Value> StartExecution(Environment* env, const char* main_script_id) {
       env->process_object(),
       env->native_module_require(),
       env->internal_binding_loader(),
-      env->primordials(),
+      v8::Undefined(env->isolate()),
       env->NewFunctionTemplate(MarkBootstrapComplete)
           ->GetFunction(env->context())
           .ToLocalChecked()};

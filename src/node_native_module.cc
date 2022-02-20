@@ -271,11 +271,11 @@ MaybeLocal<Function> NativeModuleLoader::LookupAndCompile(
     }
   }
 
-  const bool has_cache = cached_data != nullptr;
+  const bool has_cache = false;
   ScriptCompiler::CompileOptions options =
       has_cache ? ScriptCompiler::kConsumeCodeCache
                 : ScriptCompiler::kEagerCompile;
-  ScriptCompiler::Source script_source(source, origin, cached_data);
+  ScriptCompiler::Source script_source(source, origin, nullptr);
 
   MaybeLocal<Function> maybe_fun =
       ScriptCompiler::CompileFunctionInContext(context,
@@ -304,6 +304,7 @@ MaybeLocal<Function> NativeModuleLoader::LookupAndCompile(
   *result = (has_cache && !script_source.GetCachedData()->rejected)
                 ? Result::kWithCache
                 : Result::kWithoutCache;
+  printf("load native module %s, Result::kWithCache? %d\n", id, *result == Result::kWithCache);
 
   if (*result == Result::kWithCache) {
     return scope.Escape(fun);
