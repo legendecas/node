@@ -80,6 +80,7 @@
   V(wasi)                                                                      \
   V(wasm_web_api)                                                              \
   V(watchdog)                                                                  \
+  V(webidl)                                                                    \
   V(worker)                                                                    \
   V(zlib)
 

@@ -33,6 +33,7 @@ static_assert(static_cast<int>(NM_F_LINKED) ==
 #define NODE_BINDINGS_WITH_PER_ISOLATE_INIT(V)                                 \
   V(builtins)                                                                  \
   V(performance)                                                               \
+  V(webidl)                                                                    \
   V(worker)                                                                    \
   NODE_BUILTIN_ICU_BINDINGS(V)
 

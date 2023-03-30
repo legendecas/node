@@ -12,7 +12,6 @@
       "note": "We are faking location with a URL object for the sake of the testharness and it has searchParams.",
       "expected": [
         "searchParams on location object",
-        "URL: no structured serialize/deserialize support",
         "URLSearchParams: no structured serialize/deserialize support"
       ]
     }
