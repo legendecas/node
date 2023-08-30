@@ -584,6 +584,9 @@ void NativeContext::RunPromiseHook(PromiseHookType type,
     case PromiseHookType::kResolve:
       contextSlot = PROMISE_HOOK_RESOLVE_FUNCTION_INDEX;
       break;
+    case PromiseHookType::kEnqueue:
+      contextSlot = PROMISE_HOOK_ENQUEUE_FUNCTION_INDEX;
+      break;
     case PromiseHookType::kBefore:
       contextSlot = PROMISE_HOOK_BEFORE_FUNCTION_INDEX;
       break;

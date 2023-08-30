@@ -74,18 +74,21 @@ void* const ContextEmbedderTag::kNodeContextTagPtr = const_cast<void*>(
 void AsyncHooks::ResetPromiseHooks(Local<Function> init,
                                    Local<Function> before,
                                    Local<Function> after,
-                                   Local<Function> resolve) {
+                                   Local<Function> resolve,
+                                   Local<Function> enqueue) {
   js_promise_hooks_[0].Reset(env()->isolate(), init);
   js_promise_hooks_[1].Reset(env()->isolate(), before);
   js_promise_hooks_[2].Reset(env()->isolate(), after);
   js_promise_hooks_[3].Reset(env()->isolate(), resolve);
+  js_promise_hooks_[4].Reset(env()->isolate(), enqueue);
 }
 
 void Environment::ResetPromiseHooks(Local<Function> init,
                                     Local<Function> before,
                                     Local<Function> after,
-                                    Local<Function> resolve) {
-  async_hooks()->ResetPromiseHooks(init, before, after, resolve);
+                                    Local<Function> resolve,
+                                    Local<Function> enqueue) {
+  async_hooks()->ResetPromiseHooks(init, before, after, resolve, enqueue);
 
   for (auto it = contexts_.begin(); it != contexts_.end(); it++) {
     if (it->IsEmpty()) {
@@ -93,7 +96,7 @@ void Environment::ResetPromiseHooks(Local<Function> init,
       continue;
     }
     PersistentToLocal::Weak(isolate_, *it)
-        ->SetPromiseHooks(init, before, after, resolve);
+        ->SetPromiseHooks(init, before, after, resolve, enqueue);
   }
 }
 
@@ -205,7 +208,10 @@ void AsyncHooks::InstallPromiseHooks(Local<Context> ctx) {
                            : PersistentToLocal::Strong(js_promise_hooks_[2]),
                        js_promise_hooks_[3].IsEmpty()
                            ? Local<Function>()
-                           : PersistentToLocal::Strong(js_promise_hooks_[3]));
+                           : PersistentToLocal::Strong(js_promise_hooks_[3]),
+                       js_promise_hooks_[4].IsEmpty()
+                           ? Local<Function>()
+                           : PersistentToLocal::Strong(js_promise_hooks_[4]));
 }
 
 void Environment::TrackContext(Local<Context> context) {

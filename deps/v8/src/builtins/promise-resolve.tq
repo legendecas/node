@@ -187,6 +187,7 @@ ResolvePromise(implicit context: Context)(
 
     // 14. Perform HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
     // 15. Return undefined.
+    RunContextPromiseHookEnqueue(promise);
     return EnqueueMicrotask(task.context, task);
   }
 }

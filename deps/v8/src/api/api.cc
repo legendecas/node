@@ -7246,7 +7246,8 @@ void Context::SetContinuationPreservedEmbedderData(Local<Value> data) {
 void v8::Context::SetPromiseHooks(Local<Function> init_hook,
                                   Local<Function> before_hook,
                                   Local<Function> after_hook,
-                                  Local<Function> resolve_hook) {
+                                  Local<Function> resolve_hook,
+                                  Local<Function> enqueue_hook) {
 #ifdef V8_ENABLE_JAVASCRIPT_PROMISE_HOOKS
   i::Handle<i::Context> context = Utils::OpenHandle(this);
   i::Isolate* i_isolate = context->GetIsolate();
@@ -7255,6 +7256,7 @@ void v8::Context::SetPromiseHooks(Local<Function> init_hook,
   i::Handle<i::Object> before = i_isolate->factory()->undefined_value();
   i::Handle<i::Object> after = i_isolate->factory()->undefined_value();
   i::Handle<i::Object> resolve = i_isolate->factory()->undefined_value();
+  i::Handle<i::Object> enqueue = i_isolate->factory()->undefined_value();
 
   bool has_hook = false;
 
@@ -7274,6 +7276,10 @@ void v8::Context::SetPromiseHooks(Local<Function> init_hook,
     resolve = Utils::OpenHandle(*resolve_hook);
     has_hook = true;
   }
+  if (!enqueue_hook.IsEmpty()) {
+    enqueue = Utils::OpenHandle(*enqueue_hook);
+    has_hook = true;
+  }
 
   i_isolate->SetHasContextPromiseHooks(has_hook);
 
@@ -7281,6 +7287,7 @@ void v8::Context::SetPromiseHooks(Local<Function> init_hook,
   context->native_context().set_promise_hook_before_function(*before);
   context->native_context().set_promise_hook_after_function(*after);
   context->native_context().set_promise_hook_resolve_function(*resolve);
+  context->native_context().set_promise_hook_enqueue_function(*enqueue);
 #else   // V8_ENABLE_JAVASCRIPT_PROMISE_HOOKS
   Utils::ApiCheck(false, "v8::Context::SetPromiseHook",
                   "V8 was compiled without JavaScript Promise hooks");

@@ -190,7 +190,8 @@ static void SetPromiseHooks(const FunctionCallbackInfo<Value>& args) {
       args[0]->IsFunction() ? args[0].As<Function>() : Local<Function>(),
       args[1]->IsFunction() ? args[1].As<Function>() : Local<Function>(),
       args[2]->IsFunction() ? args[2].As<Function>() : Local<Function>(),
-      args[3]->IsFunction() ? args[3].As<Function>() : Local<Function>());
+      args[3]->IsFunction() ? args[3].As<Function>() : Local<Function>(),
+      args[4]->IsFunction() ? args[4].As<Function>() : Local<Function>());
 }
 
 class DestroyParam {

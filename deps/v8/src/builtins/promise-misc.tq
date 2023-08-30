@@ -123,6 +123,18 @@ transitioning macro RunContextPromiseHookInit(implicit context: Context)(
 }
 
 @export
+transitioning macro RunContextPromiseHookEnqueue(implicit context: Context)(
+    promise: JSPromise|PromiseCapability|Undefined): void {
+  // Use potentially unused variables.
+  const _unusedPromise = promise;
+  @if(V8_ENABLE_JAVASCRIPT_PROMISE_HOOKS) {
+    RunContextPromiseHook(
+        ContextSlot::PROMISE_HOOK_ENQUEUE_FUNCTION_INDEX, promise,
+        PromiseHookFlags());
+  }
+}
+
+@export
 transitioning macro RunContextPromiseHookResolve(implicit context: Context)(
     promise: JSPromise): void {
   // Use potentially unused variables.

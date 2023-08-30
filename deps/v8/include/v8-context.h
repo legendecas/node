@@ -330,7 +330,8 @@ class V8_EXPORT Context : public Data {
    */
   void SetPromiseHooks(Local<Function> init_hook, Local<Function> before_hook,
                        Local<Function> after_hook,
-                       Local<Function> resolve_hook);
+                       Local<Function> resolve_hook,
+                       Local<Function> enqueue_hook);
 
   bool HasTemplateLiteralObject(Local<Value> object);
   /**

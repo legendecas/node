@@ -138,7 +138,7 @@ class V8_EXPORT Promise : public Object {
  * PromiseHook with type kAfter is called right at the end of the
  * PromiseReactionJob.
  */
-enum class PromiseHookType { kInit, kResolve, kBefore, kAfter };
+enum class PromiseHookType { kInit, kResolve, kEnqueue, kBefore, kAfter };
 
 using PromiseHook = void (*)(PromiseHookType type, Local<Promise> promise,
                              Local<Value> parent);

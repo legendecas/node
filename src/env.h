@@ -307,7 +307,8 @@ class AsyncHooks : public MemoryRetainer {
   void ResetPromiseHooks(v8::Local<v8::Function> init,
                          v8::Local<v8::Function> before,
                          v8::Local<v8::Function> after,
-                         v8::Local<v8::Function> resolve);
+                         v8::Local<v8::Function> resolve,
+                         v8::Local<v8::Function> enqueue);
 
   inline v8::Local<v8::String> provider_string(int idx);
 
@@ -385,7 +386,7 @@ class AsyncHooks : public MemoryRetainer {
   // Non-empty during deserialization
   const SerializeInfo* info_ = nullptr;
 
-  std::array<v8::Global<v8::Function>, 4> js_promise_hooks_;
+  std::array<v8::Global<v8::Function>, 5> js_promise_hooks_;
 };
 
 class ImmediateInfo : public MemoryRetainer {
@@ -670,7 +671,8 @@ class Environment : public MemoryRetainer {
   void ResetPromiseHooks(v8::Local<v8::Function> init,
                          v8::Local<v8::Function> before,
                          v8::Local<v8::Function> after,
-                         v8::Local<v8::Function> resolve);
+                         v8::Local<v8::Function> resolve,
+                         v8::Local<v8::Function> enqueue);
   void AssignToContext(v8::Local<v8::Context> context,
                        Realm* realm,
                        const ContextInfo& info);

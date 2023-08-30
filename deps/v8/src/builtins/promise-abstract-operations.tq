@@ -124,6 +124,7 @@ transitioning macro MorphAndEnqueuePromiseReaction(implicit context: Context)(
         UnsafeCast<PromiseFulfillReactionJobTask>(promiseReaction);
     promiseReactionJobTask.argument = argument;
     promiseReactionJobTask.context = handlerContext;
+    RunContextPromiseHookEnqueue(promiseReaction.promise_or_capability);
     EnqueueMicrotask(handlerContext, promiseReactionJobTask);
     static_assert(
         kPromiseReactionFulfillHandlerOffset ==
@@ -140,6 +141,7 @@ transitioning macro MorphAndEnqueuePromiseReaction(implicit context: Context)(
     promiseReactionJobTask.argument = argument;
     promiseReactionJobTask.context = handlerContext;
     promiseReactionJobTask.handler = primaryHandler;
+    RunContextPromiseHookEnqueue(promiseReaction.promise_or_capability);
     EnqueueMicrotask(handlerContext, promiseReactionJobTask);
     static_assert(
         kPromiseReactionPromiseOrCapabilityOffset ==
@@ -478,6 +480,7 @@ transitioning macro PerformPromiseThenImpl(implicit context: Context)(
           runtime::PromiseRevokeReject(promise);
         }
       }
+    RunContextPromiseHookEnqueue(promise);
     EnqueueMicrotask(handlerContext, microtask);
   }
   promise.SetHasHandler();

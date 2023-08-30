@@ -255,6 +255,8 @@ enum ContextLookupFlags {
   V(PROMISE_HOOK_AFTER_FUNCTION_INDEX, Object, promise_hook_after_function)    \
   V(PROMISE_HOOK_RESOLVE_FUNCTION_INDEX, Object,                               \
     promise_hook_resolve_function)                                             \
+  V(PROMISE_HOOK_ENQUEUE_FUNCTION_INDEX, Object,                               \
+    promise_hook_enqueue_function)                                             \
   V(PROXY_CALLABLE_MAP_INDEX, Map, proxy_callable_map)                         \
   V(PROXY_CONSTRUCTOR_MAP_INDEX, Map, proxy_constructor_map)                   \
   V(PROXY_FUNCTION_INDEX, JSFunction, proxy_function)                          \
