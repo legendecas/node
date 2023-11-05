@@ -7,7 +7,8 @@
       ],
       "flaky": [
         "Closing a channel in onmessage prevents already queued tasks from firing onmessage events"
-      ]
+      ],
+      "note": "WPT test auto rolling"
     }
   },
   "interface.any.js": {
@@ -15,14 +16,16 @@
       "expected": [
         "postMessage after close should throw",
         "postMessage should throw InvalidStateError after close, even with uncloneable data"
-      ]
+      ],
+      "note": "WPT test auto rolling"
     }
   },
   "origin.window.js": {
     "fail": {
       "expected": [
         "Serialization of BroadcastChannel origin"
-      ]
+      ],
+      "note": "WPT test auto rolling"
     }
   }
 }

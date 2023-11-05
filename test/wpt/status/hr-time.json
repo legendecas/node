@@ -3,7 +3,8 @@
     "fail": {
       "expected": [
         "Window interface: attribute performance"
-      ]
+      ],
+      "note": "WPT test auto rolling"
     }
   },
   "idlharness-shadowrealm.window.js": {
