@@ -3,8 +3,8 @@
     "fail": {
       "note": "WPT test auto rolling",
       "expected": [
-        "messages are delivered in port creation order",
-        "postMessage results in correct event"
+        "postMessage results in correct event",
+        "messages are delivered in port creation order"
       ]
     }
   },

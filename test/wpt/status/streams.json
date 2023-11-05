@@ -74,10 +74,10 @@
     "fail": {
       "note": "WPT test auto rolling",
       "expected": [
-        "aborting the writable side should call transformer.abort()",
-        "aborting the writable side should reject if transformer.cancel() throws",
         "cancelling the readable side should call transformer.cancel()",
         "cancelling the readable side should reject if transformer.cancel() throws",
+        "aborting the writable side should call transformer.abort()",
+        "aborting the writable side should reject if transformer.cancel() throws",
         "closing the writable side should reject if a parallel transformer.cancel() throws",
         "readable.cancel() and a parallel writable.close() should reject if a transformer.cancel() calls controller.error()",
         "writable.abort() and readable.cancel() should reject if a transformer.cancel() calls controller.error()"

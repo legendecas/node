@@ -27,17 +27,17 @@
     "fail": {
       "note": "WPT test auto rolling",
       "expected": [
-        "PerformanceResourceTiming interface: attribute contentType",
         "PerformanceResourceTiming interface: attribute deliveryType",
         "PerformanceResourceTiming interface: attribute firstInterimResponseStart",
-        "PerformanceResourceTiming interface: attribute renderBlockingStatus",
         "PerformanceResourceTiming interface: attribute responseStatus",
-        "PerformanceResourceTiming interface: default toJSON operation on resource",
-        "PerformanceResourceTiming interface: resource must inherit property \"contentType\" with the proper type",
+        "PerformanceResourceTiming interface: attribute renderBlockingStatus",
+        "PerformanceResourceTiming interface: attribute contentType",
         "PerformanceResourceTiming interface: resource must inherit property \"deliveryType\" with the proper type",
         "PerformanceResourceTiming interface: resource must inherit property \"firstInterimResponseStart\" with the proper type",
+        "PerformanceResourceTiming interface: resource must inherit property \"responseStatus\" with the proper type",
         "PerformanceResourceTiming interface: resource must inherit property \"renderBlockingStatus\" with the proper type",
-        "PerformanceResourceTiming interface: resource must inherit property \"responseStatus\" with the proper type"
+        "PerformanceResourceTiming interface: resource must inherit property \"contentType\" with the proper type",
+        "PerformanceResourceTiming interface: default toJSON operation on resource"
       ]
     }
   }
