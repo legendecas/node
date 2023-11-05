@@ -58,8 +58,11 @@ jobs:
       - name: Rolling update wpt fixtures
         run: ./tools/dep_updaters/update-wpt.sh
 
-      - name: Build
-        run: make build-ci -j2 V=1 CONFIG_FLAGS="--error-on-warn"
+      # - name: Build
+      #   run: make build-ci -j2 V=1 CONFIG_FLAGS="--error-on-warn"
+      - name: Set env.NODE
+        run: echo "NODE=$(which node)" >> $GITHUB_ENV
+
       - name: Update wpt status.json
         run: make test-wpt-status-update
 
