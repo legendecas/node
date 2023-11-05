@@ -1,17 +1,16 @@
 {
   "basics.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
-        "postMessage results in correct event",
-        "messages are delivered in port creation order"
-      ],
-      "flaky": [
-        "Closing a channel in onmessage prevents already queued tasks from firing onmessage events"
+        "messages are delivered in port creation order",
+        "postMessage results in correct event"
       ]
     }
   },
   "interface.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "postMessage after close should throw",
         "postMessage should throw InvalidStateError after close, even with uncloneable data"
@@ -20,6 +19,7 @@
   },
   "origin.window.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "Serialization of BroadcastChannel origin"
       ]

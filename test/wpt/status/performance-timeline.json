@@ -9,5 +9,47 @@
   },
   "webtiming-resolution.any.js": {
     "skip": "flaky"
+  },
+  "droppedentriescount.any.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "idlharness-shadowrealm.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-attributes.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-bfcache-reasons-stay.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-bfcache.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-cross-origin-bfcache.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-fetch.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-lock.https.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-navigation-failure.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-not-bfcached.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-redirect-on-history.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-reload.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-same-origin-bfcache.tentative.window.js": {
+    "skip": "WPT test auto rolling"
+  },
+  "not-restored-reasons/performance-navigation-timing-same-origin-replace.tentative.window.js": {
+    "skip": "WPT test auto rolling"
   }
 }

@@ -1,10 +1,11 @@
 {
   "AddEventListenerOptions-passive.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
+        "passive behavior of one listener should be unaffected by the presence of other listeners",
         "preventDefault should be ignored if-and-only-if the passive option is true",
-        "returnValue should be ignored if-and-only-if the passive option is true",
-        "passive behavior of one listener should be unaffected by the presence of other listeners"
+        "returnValue should be ignored if-and-only-if the passive option is true"
       ]
     }
   },
@@ -13,6 +14,7 @@
   },
   "Event-isTrusted.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "Event-isTrusted"
       ]

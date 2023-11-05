@@ -1,7 +1,15 @@
 {
   "structured-clone.any.js": {
     "fail": {
-      "expected": ["File basic"]
+      "note": "WPT test auto rolling",
+      "expected": [
+        "A detached ArrayBuffer cannot be transferred",
+        "A subclass instance will deserialize as its closest serializable superclass",
+        "File basic",
+        "Growable SharedArrayBuffer",
+        "Serializing a non-serializable platform object fails",
+        "Transferring a non-transferable platform object fails"
+      ]
     }
   }
 }

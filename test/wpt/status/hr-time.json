@@ -1,6 +1,7 @@
 {
   "idlharness.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "Window interface: attribute performance"
       ]

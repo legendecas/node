@@ -1,8 +1,10 @@
 {
   "idlharness.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
-        "ReadableStream interface: async iterable<any>"
+        "ReadableStream interface: async iterable<any>",
+        "ReadableStream interface: operation from(any)"
       ]
     }
   },
@@ -11,6 +13,7 @@
   },
   "piping/general-addition.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "enqueue() must not synchronously call write algorithm"
       ]
@@ -24,9 +27,10 @@
   },
   "readable-streams/owning-type-message-port.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
-        "Transferred MessageChannel works as expected",
-        "Second branch of owning ReadableStream tee should end up into errors with transfer only values"
+        "Second branch of owning ReadableStream tee should end up into errors with transfer only values",
+        "Transferred MessageChannel works as expected"
       ]
     }
   },
@@ -35,12 +39,13 @@
   },
   "readable-streams/owning-type.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "ReadableStream can be constructed with owning type",
         "ReadableStream of type owning should call start with a ReadableStreamDefaultController",
+        "ReadableStream of type owning should transfer enqueued chunks",
         "ReadableStream should be able to call enqueue with an empty transfer list",
-        "ReadableStream should check transfer parameter",
-        "ReadableStream of type owning should transfer enqueued chunks"
+        "ReadableStream should check transfer parameter"
       ]
     }
   },
@@ -52,6 +57,7 @@
   },
   "transferable/transform-stream-members.any.js": {
     "fail": {
+      "note": "WPT test auto rolling",
       "expected": [
         "Transferring [object TransformStream],[object ReadableStream] should fail",
         "Transferring [object TransformStream],[object WritableStream] should fail"
@@ -63,5 +69,43 @@
   },
   "readable-streams/read-task-handling.window.js": {
     "skip": "Browser-specific test"
+  },
+  "transform-streams/cancel.any.js": {
+    "fail": {
+      "note": "WPT test auto rolling",
+      "expected": [
+        "aborting the writable side should call transformer.abort()",
+        "aborting the writable side should reject if transformer.cancel() throws",
+        "cancelling the readable side should call transformer.cancel()",
+        "cancelling the readable side should reject if transformer.cancel() throws",
+        "closing the writable side should reject if a parallel transformer.cancel() throws",
+        "readable.cancel() and a parallel writable.close() should reject if a transformer.cancel() calls controller.error()",
+        "writable.abort() and readable.cancel() should reject if a transformer.cancel() calls controller.error()"
+      ]
+    }
+  },
+  "transform-streams/errors.any.js": {
+    "fail": {
+      "note": "WPT test auto rolling",
+      "expected": [
+        "controller.error() should close writable immediately after readable.cancel()"
+      ]
+    }
+  },
+  "transform-streams/general.any.js": {
+    "fail": {
+      "note": "WPT test auto rolling",
+      "expected": [
+        "terminate() should abort writable immediately after readable.cancel()"
+      ]
+    }
+  },
+  "transform-streams/reentrant-strategies.any.js": {
+    "fail": {
+      "note": "WPT test auto rolling",
+      "expected": [
+        "writer.abort() inside size() should work"
+      ]
+    }
   }
 }
