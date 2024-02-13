@@ -385,11 +385,72 @@ static void GetAvailableParallelism(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(parallelism);
 }
 
+void SumWithGlobals(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  uint32_t sum = 0;
+  std::vector<v8::Global<Value>> vec;
+  v8::Local<v8::Array> arr = args[0].As<v8::Array>();
+  if (FromV8Array(context, arr, &vec).IsNothing()) {
+    return;
+  }
+  for (size_t i = 0; i < vec.size(); ++i) {
+    Local<Value> val = vec[i].Get(isolate);
+    sum += val.As<v8::Uint32>()->Value();
+  }
+  args.GetReturnValue().Set(sum);
+}
+
+void SumTraditional(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  uint32_t sum = 0;
+  v8::Local<v8::Array> arr = args[0].As<v8::Array>();
+  uint32_t count = arr->Length();
+  for (uint32_t i = 0; i < count; ++i) {
+    sum += arr->Get(context, i).ToLocalChecked().As<v8::Uint32>()->Value();
+  }
+  args.GetReturnValue().Set(sum);
+}
+
+void SumWithTemporaryGlobals(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  uint32_t sum = 0;
+  v8::Local<v8::Array> arr = args[0].As<v8::Array>();
+  std::vector<v8::Local<Value>> locals;
+  {
+    std::vector<v8::Global<Value>> vec;
+    if (FromV8Array(context, arr, &vec).IsNothing()) {
+      return;
+    }
+    size_t count = vec.size();
+    locals.reserve(count);
+    for (size_t i = 0; i < count; ++i) {
+      locals.push_back(vec[i].Get(isolate));
+    }
+  }
+  for (size_t i = 0; i < locals.size(); ++i) {
+    sum += locals[i].As<v8::Uint32>()->Value();
+  }
+  args.GetReturnValue().Set(sum);
+}
+
+void SumByNative(const FunctionCallbackInfo<Value>& args) {
+  uint32_t a = args[0].As<v8::Uint32>()->Value();
+  uint32_t b = args[1].As<v8::Uint32>()->Value();
+  args.GetReturnValue().Set(a + b);
+}
+
 void Initialize(Local<Object> target,
                 Local<Value> unused,
                 Local<Context> context,
                 void* priv) {
   Environment* env = Environment::GetCurrent(context);
+  SetMethod(context, target, "SumWithGlobals", SumWithGlobals);
+  SetMethod(context, target, "SumTraditional", SumTraditional);
+  SetMethod(context, target, "SumWithTemporaryGlobals", SumWithTemporaryGlobals);
+  SetMethod(context, target, "SumByNative", SumByNative);
   SetMethod(context, target, "getHostname", GetHostname);
   SetMethod(context, target, "getLoadAvg", GetLoadAvg);
   SetMethod(context, target, "getUptime", GetUptime);

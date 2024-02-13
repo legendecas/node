@@ -413,7 +413,7 @@ inline v8::Array::CallbackResult PushItemToVector(uint32_t index, v8::Local<v8::
   return v8::Array::CallbackResult::kContinue;
 }
 
-inline v8::Maybe<void> FromV8Array(
+v8::Maybe<void> FromV8Array(
     v8::Local<v8::Context> context, v8::Local<v8::Array> js_array,
     std::vector<v8::Global<v8::Value>>* out) {
   uint32_t count = js_array->Length();
