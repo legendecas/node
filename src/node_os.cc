@@ -385,6 +385,18 @@ static void GetAvailableParallelism(const FunctionCallbackInfo<Value>& args) {
   args.GetReturnValue().Set(parallelism);
 }
 
+void SumWithIteration(const FunctionCallbackInfo<Value>& args) {
+  Isolate* isolate = args.GetIsolate();
+  Local<Context> context = isolate->GetCurrentContext();
+  uint32_t sum = 0;
+  v8::Local<v8::Array> arr = args[0].As<v8::Array>();
+  IterateV8Array(context, arr, [&](uint32_t i, v8::Local<Value> val) {
+    sum += val.As<v8::Uint32>()->Value();
+    return v8::Array::CallbackResult::kContinue;
+  });
+  args.GetReturnValue().Set(sum);
+}
+
 void SumWithGlobals(const FunctionCallbackInfo<Value>& args) {
   Isolate* isolate = args.GetIsolate();
   Local<Context> context = isolate->GetCurrentContext();
@@ -447,6 +459,7 @@ void Initialize(Local<Object> target,
                 Local<Context> context,
                 void* priv) {
   Environment* env = Environment::GetCurrent(context);
+  SetMethod(context, target, "SumWithIteration", SumWithIteration);
   SetMethod(context, target, "SumWithGlobals", SumWithGlobals);
   SetMethod(context, target, "SumTraditional", SumTraditional);
   SetMethod(context, target, "SumWithTemporaryGlobals", SumWithTemporaryGlobals);

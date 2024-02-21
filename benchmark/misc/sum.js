@@ -5,7 +5,7 @@ const common = require('../common.js');
 const bench = common.createBenchmark(main, {
   n: [10000],
   length: [1, 2, 3, 10, 100],
-  kind: ['SumWithGlobals', 'SumTraditional', 'SumWithTemporaryGlobals', 'SumByNative']
+  kind: ['SumWithIteration', 'SumWithGlobals', 'SumTraditional', 'SumWithTemporaryGlobals', 'SumByNative']
 });
 
 function main({ n, length, kind }) {

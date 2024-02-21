@@ -422,6 +422,17 @@ v8::Maybe<void> FromV8Array(
   return js_array->Iterate(context, PushItemToVector, &data);
 }
 
+inline v8::Array::CallbackResult IterateV8ArrayCallback(uint32_t index, v8::Local<v8::Value> element, void* data) {
+  auto fn = static_cast<std::function<v8::Array::CallbackResult(uint32_t index, v8::Local<v8::Value> val)>*>(data);
+  return (*fn)(index, element);
+}
+
+inline v8::Maybe<void> IterateV8Array(v8::Local<v8::Context> context,
+                                     v8::Local<v8::Array> js_array,
+                                     std::function<v8::Array::CallbackResult(uint32_t index, v8::Local<v8::Value> val)>&& callback) {
+  return js_array->Iterate(context, IterateV8ArrayCallback, &callback);
+}
+
 v8::MaybeLocal<v8::Value> ToV8Value(v8::Local<v8::Context> context,
                                     std::string_view str,
                                     v8::Isolate* isolate) {

@@ -700,6 +700,11 @@ using DeleteFnPtr = typename FunctionDeleter<T, function>::Pointer;
 inline v8::Maybe<void> FromV8Array(
     v8::Local<v8::Context> context, v8::Local<v8::Array> js_array,
     std::vector<v8::Global<v8::Value>>* out);
+
+inline v8::Maybe<void> IterateV8Array(v8::Local<v8::Context> context,
+                                     v8::Local<v8::Array> js_array,
+                                     std::function<v8::Array::CallbackResult(uint32_t index, v8::Local<v8::Value> val)>&& callback);
+
 std::vector<std::string_view> SplitString(const std::string_view in,
                                           const std::string_view delim);
 
