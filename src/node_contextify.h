@@ -6,6 +6,7 @@
 #include "base_object-inl.h"
 #include "node_context_data.h"
 #include "node_errors.h"
+#include "node_realm.h"
 
 namespace node {
 class ExternalReferenceRegistry;
@@ -154,14 +155,14 @@ class ContextifyScript : public BaseObject {
   static bool InstanceOf(Environment* env, const v8::Local<v8::Value>& args);
   static void CreateCachedData(const v8::FunctionCallbackInfo<v8::Value>& args);
   static void RunInContext(const v8::FunctionCallbackInfo<v8::Value>& args);
-  static bool EvalMachine(v8::Local<v8::Context> context,
-                          Environment* env,
-                          const int64_t timeout,
-                          const bool display_errors,
-                          const bool break_on_sigint,
-                          const bool break_on_first_line,
-                          v8::MicrotaskQueue* microtask_queue,
-                          const v8::FunctionCallbackInfo<v8::Value>& args);
+
+  v8::MaybeLocal<v8::Value> EvalMachine(v8::Local<v8::Context> context,
+                                        Environment* env,
+                                        const int64_t timeout,
+                                        const bool display_errors,
+                                        const bool break_on_sigint,
+                                        const bool break_on_first_line,
+                                        v8::MicrotaskQueue* microtask_queue);
 
  private:
   v8::Global<v8::UnboundScript> script_;

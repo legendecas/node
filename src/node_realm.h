@@ -46,6 +46,7 @@ class Realm : public MemoryRetainer {
   enum Kind {
     kPrincipal,
     kShadowRealm,
+    kVmRealm,
   };
 
   static inline Realm* GetCurrent(v8::Isolate* isolate);

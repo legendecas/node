@@ -966,6 +966,69 @@ const vm = require('node:vm');
 })();
 ```
 
+## Class: `vm.Realm`
+
+> Stability: 1 - Experimental. Use `--experimental-vm-realm` CLI flag to
+> enable this feature.
+<!-- YAML
+added: REPLACEME
+-->
+
+* Extends: {EventEmitter}
+
+A `vm.Realm` is effectively a Node.js environment that runs within the
+same thread. It similar to a [ShadowRealm][], but with a few main differences:
+
+------
+Type | ShadowRealm | vm.Realm | vm.Context
+--- | --- | --- | ---
+Object exchange | Only primitive values and functions are allowed crossing the boundary | Allows JavaScript object exchange between the realms | Allows JavaScript object exchange between the realms
+Web APIs | Built-in with `[Exposed=*]` only | Built-in | Not built-in
+I/O operations | Not built-in | Built-in | Not built-in
+
+
+```mjs
+import { Realm } from 'node:vm';
+const realm = new Realm();
+const { myAsyncFunction } = await realm.import('my-module');
+console.log(await myAsyncFunction());
+```
+
+#### `new vm.Realm()`
+
+<!-- YAML
+added: REPLACEME
+-->
+
+#### `realm.evaluate(scriptOrSource)`
+
+<!-- YAML
+added: REPLACEME
+-->
+
+* `scriptOrSource` {vm.Script|String} A script or source code to evaluate.
+
+#### `realm.import(specifier, attributes)`
+
+<!-- YAML
+added: REPLACEME
+-->
+
+* `specifier` {string} A module specifier like './file.js' or 'my-package'
+
+Creates a function that can be used for loading
+modules inside the inner Node.js instance.
+
+#### `realm.globalThis`
+
+<!-- YAML
+added: REPLACEME
+-->
+
+* Type: {Object}
+
+Returns a reference to the global object of the inner Realm instance.
+
 ## `vm.compileFunction(code[, params[, options]])`
 
 <!-- YAML

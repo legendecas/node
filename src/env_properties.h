@@ -403,6 +403,7 @@
   V(qlogoutputstream_constructor_template, v8::ObjectTemplate)                 \
   V(tcp_constructor_template, v8::FunctionTemplate)                            \
   V(tty_constructor_template, v8::FunctionTemplate)                            \
+  V(vm_realm_constructor_template, v8::FunctionTemplate)                       \
   V(write_wrap_template, v8::ObjectTemplate)                                   \
   V(worker_heap_snapshot_taker_template, v8::ObjectTemplate)                   \
   V(x509_constructor_template, v8::FunctionTemplate)

@@ -187,8 +187,8 @@ void StartStreamingCompilation(const FunctionCallbackInfo<Value>& info) {
 
 // Called once by JavaScript during initialization.
 void SetImplementation(const FunctionCallbackInfo<Value>& info) {
-  Environment* env = Environment::GetCurrent(info);
-  env->set_wasm_streaming_compilation_impl(info[0].As<Function>());
+  Realm* realm = Realm::GetCurrent(info);
+  realm->set_wasm_streaming_compilation_impl(info[0].As<Function>());
 }
 
 void Initialize(Local<Object> target,

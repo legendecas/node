@@ -111,6 +111,7 @@ class ModuleWrap;
 
 class Environment;
 class Realm;
+class VmRealm;
 
 // Disables zero-filling for ArrayBuffer allocations in this scope. This is
 // similar to how we implement Buffer.allocUnsafe() in JS land.
@@ -694,6 +695,8 @@ class Environment : public MemoryRetainer {
   void UnassignFromContext(v8::Local<v8::Context> context);
   void TrackShadowRealm(shadow_realm::ShadowRealm* realm);
   void UntrackShadowRealm(shadow_realm::ShadowRealm* realm);
+  void TrackVmRealm(VmRealm* realm);
+  void UntrackVmRealm(VmRealm* realm);
 
   void StartProfilerIdleNotifier();
 
@@ -1094,6 +1097,7 @@ class Environment : public MemoryRetainer {
   size_t async_callback_scope_depth_ = 0;
   std::vector<double> destroy_async_id_list_;
   std::unordered_set<shadow_realm::ShadowRealm*> shadow_realms_;
+  std::unordered_set<VmRealm*> vm_realms_;
 
 #if HAVE_INSPECTOR
   std::unique_ptr<profiler::V8CoverageConnection> coverage_connection_;

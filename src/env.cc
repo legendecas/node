@@ -257,6 +257,14 @@ void Environment::UntrackShadowRealm(shadow_realm::ShadowRealm* realm) {
   shadow_realms_.erase(realm);
 }
 
+void Environment::TrackVmRealm(VmRealm* realm) {
+  vm_realms_.insert(realm);
+}
+
+void Environment::UntrackVmRealm(VmRealm* realm) {
+  vm_realms_.erase(realm);
+}
+
 AsyncHooks::DefaultTriggerAsyncIdScope::DefaultTriggerAsyncIdScope(
     Environment* env, double default_trigger_async_id)
     : async_hooks_(env->async_hooks()) {

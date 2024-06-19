@@ -481,6 +481,11 @@ EnvironmentOptionsParser::EnvironmentOptionsParser() {
             "experimental ES Module support in vm module",
             &EnvironmentOptions::experimental_vm_modules,
             kAllowedInEnvvar);
+  AddOption("--experimental-vm-realm",
+            "experimental Realm support in vm module",
+            &EnvironmentOptions::experimental_vm_realm,
+            kAllowedInEnvironment,
+            false);
   AddOption("--experimental-worker", "", NoOp{}, kAllowedInEnvvar);
   AddOption("--experimental-report", "", NoOp{}, kAllowedInEnvvar);
   AddOption(

@@ -32,6 +32,7 @@
 #include "node_sea.h"
 #include "node_snapshot_builder.h"
 #include "node_url.h"
+#include "node_vm_realm.h"
 #include "node_watchdog.h"
 #include "util-inl.h"
 
@@ -1045,6 +1046,12 @@ void ContextifyScript::CreateCachedData(
 void ContextifyScript::RunInContext(const FunctionCallbackInfo<Value>& args) {
   Environment* env = Environment::GetCurrent(args);
 
+  if (!ContextifyScript::InstanceOf(env, args.This())) {
+    THROW_ERR_INVALID_THIS(
+        env, "Script methods can only be called on script instances.");
+    return;
+  }
+
   ContextifyScript* wrapped_script;
   ASSIGN_OR_RETURN_UNWRAP(&wrapped_script, args.This());
 
@@ -1085,40 +1092,32 @@ void ContextifyScript::RunInContext(const FunctionCallbackInfo<Value>& args) {
   bool break_on_first_line = args[4]->IsTrue();
 
   // Do the eval within the context
-  EvalMachine(context,
-              env,
-              timeout,
-              display_errors,
-              break_on_sigint,
-              break_on_first_line,
-              microtask_queue,
-              args);
+  MaybeLocal<Value> result = wrapped_script->EvalMachine(context,
+                                                         env,
+                                                         timeout,
+                                                         display_errors,
+                                                         break_on_sigint,
+                                                         break_on_first_line,
+                                                         microtask_queue);
+  if (!result.IsEmpty()) {
+    args.GetReturnValue().Set(result.ToLocalChecked());
+  }
 }
 
-bool ContextifyScript::EvalMachine(Local<Context> context,
-                                   Environment* env,
-                                   const int64_t timeout,
-                                   const bool display_errors,
-                                   const bool break_on_sigint,
-                                   const bool break_on_first_line,
-                                   MicrotaskQueue* mtask_queue,
-                                   const FunctionCallbackInfo<Value>& args) {
+MaybeLocal<Value> ContextifyScript::EvalMachine(Local<Context> context,
+                                                Environment* env,
+                                                const int64_t timeout,
+                                                const bool display_errors,
+                                                const bool break_on_sigint,
+                                                const bool break_on_first_line,
+                                                MicrotaskQueue* mtask_queue) {
   Context::Scope context_scope(context);
 
-  if (!env->can_call_into_js())
-    return false;
-  if (!ContextifyScript::InstanceOf(env, args.This())) {
-    THROW_ERR_INVALID_THIS(
-        env,
-        "Script methods can only be called on script instances.");
-    return false;
-  }
+  if (!env->can_call_into_js()) return {};
 
   TryCatchScope try_catch(env);
-  ContextifyScript* wrapped_script;
-  ASSIGN_OR_RETURN_UNWRAP(&wrapped_script, args.This(), false);
   Local<UnboundScript> unbound_script =
-      PersistentToLocal::Default(env->isolate(), wrapped_script->script_);
+      PersistentToLocal::Default(env->isolate(), script_);
   Local<Script> script = unbound_script->BindToCurrentContext();
 
 #if HAVE_INSPECTOR
@@ -1136,7 +1135,7 @@ bool ContextifyScript::EvalMachine(Local<Context> context,
         errors::DecorateErrorStack(env, try_catch);
       }
       try_catch.ReThrow();
-      return false;
+      return {};
     }
     env->inspector_agent()->PauseOnNextJavascriptStatement("Break on start");
   }
@@ -1167,8 +1166,7 @@ bool ContextifyScript::EvalMachine(Local<Context> context,
 
   // Convert the termination exception into a regular exception.
   if (timed_out || received_signal) {
-    if (!env->is_main_thread() && env->is_stopping())
-      return false;
+    if (!env->is_main_thread() && env->is_stopping()) return {};
     env->isolate()->CancelTerminateExecution();
     // It is possible that execution was terminated by another timeout in
     // which this timeout is nested, so check whether one of the watchdogs
@@ -1194,11 +1192,10 @@ bool ContextifyScript::EvalMachine(Local<Context> context,
     if (!try_catch.HasTerminated())
       try_catch.ReThrow();
 
-    return false;
+    return {};
   }
 
-  args.GetReturnValue().Set(result.ToLocalChecked());
-  return true;
+  return result;
 }
 
 ContextifyScript::ContextifyScript(Environment* env, Local<Object> object)
@@ -1785,6 +1782,7 @@ void CreatePerIsolateProperties(IsolateData* isolate_data,
                                 Local<ObjectTemplate> target) {
   Isolate* isolate = isolate_data->isolate();
 
+  VmRealmWrapper::CreatePerIsolateProperties(isolate_data, target);
   ContextifyContext::CreatePerIsolateProperties(isolate_data, target);
   ContextifyScript::CreatePerIsolateProperties(isolate_data, target);
 
@@ -1838,6 +1836,7 @@ static void CreatePerContextProperties(Local<Object> target,
 }
 
 void RegisterExternalReferences(ExternalReferenceRegistry* registry) {
+  VmRealmWrapper::RegisterExternalReferences(registry);
   ContextifyContext::RegisterExternalReferences(registry);
   ContextifyScript::RegisterExternalReferences(registry);
 
