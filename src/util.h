@@ -822,6 +822,14 @@ class PersistentToLocal {
   }
 
   template <class TypeName>
+  static inline v8::Local<TypeName> Strong(
+      const v8::TracedReference<TypeName>& reference) {
+    DCHECK(!reference.IsEmpty());
+    return *reinterpret_cast<v8::Local<TypeName>*>(
+        const_cast<v8::TracedReference<TypeName>*>(&reference));
+  }
+
+  template <class TypeName>
   static inline v8::Local<TypeName> Weak(
       v8::Isolate* isolate,
       const v8::PersistentBase<TypeName>& persistent) {

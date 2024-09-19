@@ -1363,7 +1363,7 @@ void ContextifyScript::Trace(cppgc::Visitor* visitor) const {
 }
 
 ContextifyScript::ContextifyScript(Environment* env, Local<Object> object) {
-  CppgcMixin::Wrap(this, env, object);
+  CppgcMixin::Wrap(this, env->principal_realm(), object);
 }
 
 ContextifyScript::~ContextifyScript() {}

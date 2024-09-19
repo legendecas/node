@@ -5,16 +5,17 @@
 
 #include "node_realm.h"
 #include "v8.h"
+#include "cppgc_helpers.h"
 
 namespace node {
 namespace shadow_realm {
 
-class ShadowRealm : public Realm {
+class ShadowRealm final : CPPGC_MIXIN(ShadowRealm), public Realm {
  public:
   static ShadowRealm* New(Environment* env);
 
-  SET_MEMORY_INFO_NAME(ShadowRealm)
-  SET_SELF_SIZE(ShadowRealm)
+  SET_CPPGC_NAME(ShadowRealm)
+  void Trace(cppgc::Visitor* visitor) const final;
 
   v8::Local<v8::Context> context() const override;
 

@@ -39,6 +39,13 @@ void Realm::MemoryInfo(MemoryTracker* tracker) const {
   tracker->TrackField("builtins_without_cache", builtins_without_cache);
 }
 
+void Realm::Trace(cppgc::Visitor* visitor) const {
+#define V(PropertyName, TypeName)                                              \
+  visitor->Trace(PropertyName##_);
+  PER_REALM_STRONG_PERSISTENT_VALUES(V)
+#undef V
+}
+
 void Realm::CreateProperties() {
   HandleScope handle_scope(isolate_);
   Local<Context> ctx = context();
@@ -283,7 +290,7 @@ v8::Local<v8::Context> Realm::context() const {
 // accessed across realms.
 #define V(PropertyName, TypeName)                                              \
   v8::Local<TypeName> PrincipalRealm::PropertyName() const {                   \
-    return PersistentToLocal::Strong(PropertyName##_);                         \
+    return PropertyName##_.Get(isolate_);                         \
   }                                                                            \
   void PrincipalRealm::set_##PropertyName(v8::Local<TypeName> value) {         \
     DCHECK_IMPLIES(!value.IsEmpty(),                                           \
