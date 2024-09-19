@@ -1053,7 +1053,7 @@ class MyWrap final : CPPGC_MIXIN(MyWrap) {
 `cppgc::GarbageCollected` types are expected to implement a
 `void Trace(cppgc::Visitor* visitor) const` method. When they are the
 final class in the hierarchy, this method must be marked `final`. For
-classes extending `node::CppgcMixn`, this should typically dispatch a
+classes extending `node::CppgcMixin`, this should typically dispatch a
 call to `CppgcMixin::Trace()` first, then trace any additional owned data
 it has. See `deps/v8/include/cppgc/garbage-collected.h` see what types of
 data can be traced.

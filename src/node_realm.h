@@ -4,8 +4,7 @@
 #if defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 
 #include <v8.h>
-#include <unordered_map>
-#include "cleanup_queue.h"
+#include "cppgc_helpers.h"
 #include "env_properties.h"
 #include "memory_tracker.h"
 #include "node_snapshotable.h"
@@ -41,7 +40,7 @@ using BindingDataStore =
  * Native bindings and builtin modules can be evaluated in either a principal
  * realm or a synthetic realm.
  */
-class Realm : public MemoryRetainer {
+class Realm : public cppgc::GarbageCollectedMixin, public MemoryRetainer {
  public:
   enum Kind {
     kPrincipal,
@@ -63,6 +62,7 @@ class Realm : public MemoryRetainer {
   Realm& operator=(Realm&&) = delete;
 
   void MemoryInfo(MemoryTracker* tracker) const override;
+  void Trace(cppgc::Visitor* visitor) const override;
 
   void CreateProperties();
   RealmSerializeInfo Serialize(v8::SnapshotCreator* creator);
@@ -134,9 +134,9 @@ class Realm : public MemoryRetainer {
   Environment* env_;
   // Shorthand for isolate pointer.
   v8::Isolate* isolate_;
-  v8::Global<v8::Context> context_;
+  v8::TracedReference<v8::Context> context_;
 
-#define V(PropertyName, TypeName) v8::Global<TypeName> PropertyName##_;
+#define V(PropertyName, TypeName) v8::TracedReference<TypeName> PropertyName##_;
   PER_REALM_STRONG_PERSISTENT_VALUES(V)
 #undef V
 
@@ -156,7 +156,9 @@ class Realm : public MemoryRetainer {
   BaseObjectList base_object_list_;
 };
 
-class PrincipalRealm : public Realm {
+class PrincipalRealm final : public cppgc::GarbageCollected<PrincipalRealm>,
+                             public cppgc::NameProvider,
+                             public Realm {
  public:
   PrincipalRealm(Environment* env,
                  v8::Local<v8::Context> context,
@@ -165,6 +167,10 @@ class PrincipalRealm : public Realm {
 
   SET_MEMORY_INFO_NAME(PrincipalRealm)
   SET_SELF_SIZE(PrincipalRealm)
+
+  SET_CPPGC_NAME(PrincipalRealm)
+  void Trace(cppgc::Visitor* visitor) const final;
+  void Dispose();
 
 #define V(PropertyName, TypeName)                                              \
   v8::Local<TypeName> PropertyName() const override;                           \

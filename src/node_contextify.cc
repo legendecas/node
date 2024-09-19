@@ -158,7 +158,7 @@ ContextifyContext::ContextifyContext(Environment* env,
     : microtask_queue_(options->own_microtask_queue
                            ? options->own_microtask_queue.release()
                            : nullptr) {
-  CppgcMixin::Wrap(this, env, wrapper);
+  CppgcMixin::Wrap(this, env->principal_realm(), wrapper);
 
   context_.Reset(env->isolate(), v8_context);
   // This should only be done after the initial initializations of the context
@@ -1361,7 +1361,7 @@ void ContextifyScript::Trace(cppgc::Visitor* visitor) const {
 }
 
 ContextifyScript::ContextifyScript(Environment* env, Local<Object> object) {
-  CppgcMixin::Wrap(this, env, object);
+  CppgcMixin::Wrap(this, env->principal_realm(), object);
 }
 
 ContextifyScript::~ContextifyScript() {}

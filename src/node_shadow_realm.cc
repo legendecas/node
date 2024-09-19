@@ -1,4 +1,5 @@
 #include "node_shadow_realm.h"
+#include "cppgc/allocation.h"
 #include "env-inl.h"
 #include "node_errors.h"
 #include "node_process.h"
@@ -8,6 +9,7 @@ namespace shadow_realm {
 using v8::Context;
 using v8::EscapableHandleScope;
 using v8::HandleScope;
+using v8::Isolate;
 using v8::Local;
 using v8::MaybeLocal;
 using v8::Object;
@@ -18,7 +20,9 @@ using TryCatchScope = node::errors::TryCatchScope;
 
 // static
 ShadowRealm* ShadowRealm::New(Environment* env) {
-  ShadowRealm* realm = new ShadowRealm(env);
+  Isolate* isolate = env->isolate();
+  ShadowRealm* realm = cppgc::MakeGarbageCollected<ShadowRealm>(
+      isolate->GetCppHeap()->GetAllocationHandle(), env);
   // TODO(legendecas): required by node::PromiseRejectCallback.
   // Remove this once promise rejection doesn't need to be handled across
   // realms.
@@ -51,87 +55,63 @@ MaybeLocal<Context> HostCreateShadowRealmContextCallback(
   return MaybeLocal<Context>();
 }
 
-// static
-void ShadowRealm::WeakCallback(const v8::WeakCallbackInfo<ShadowRealm>& data) {
-  ShadowRealm* realm = data.GetParameter();
-  realm->context_.Reset();
-
-  // Yield to pending weak callbacks before deleting the realm.
-  // This is necessary to avoid cleaning up base objects before their scheduled
-  // weak callbacks are invoked, which can lead to accessing to v8 apis during
-  // the first pass of the weak callback.
-  realm->env()->SetImmediate([realm](Environment* env) { delete realm; });
-  // Remove the cleanup hook to avoid deleting the realm again.
-  realm->env()->RemoveCleanupHook(DeleteMe, realm);
-}
-
-// static
-void ShadowRealm::DeleteMe(void* data) {
-  ShadowRealm* realm = static_cast<ShadowRealm*>(data);
-  // Clear the context handle to avoid invoking the weak callback again.
-  // Also, the context internal slots are cleared and the context is no longer
-  // reference to the realm.
-  delete realm;
-}
-
 ShadowRealm::ShadowRealm(Environment* env)
     : Realm(env, NewContext(env->isolate()), kShadowRealm) {
-  context_.SetWeak(this, WeakCallback, v8::WeakCallbackType::kParameter);
+  Isolate* isolate = env->isolate();
+  HandleScope scope(isolate);
+  Context::Scope context_scope(context());
+  // Wrap `this` to the context global object to bind the lifetime to the
+  // context.
+  Object::Wrap<v8::CppHeapPointerTag::kDefaultTag>(
+      isolate, context()->Global(), this);
   CreateProperties();
 
   env->TrackShadowRealm(this);
-  env->AddCleanupHook(DeleteMe, this);
+  env->cleanable_queue()->PushFront(this);
 }
 
 ShadowRealm::~ShadowRealm() {
+  // The destructor can be invoked by the cppgc garbage collector. It is unsafe
+  // to access any objects here.
+}
+
+void ShadowRealm::Prefinalize() {
+  if (cleanable_queue_.IsEmpty()) {
+    // This has been cleaned with an Environment cleanup.
+    return;
+  }
+  // Cleanup native handles.
+  Clean();
+  cleanable_queue_.Remove();
+}
+
+void ShadowRealm::Clean() {
   while (PendingCleanup()) {
     RunCleanup();
   }
-
   env_->UntrackShadowRealm(this);
+}
 
-  if (context_.IsEmpty()) {
-    // This most likely happened because the weak callback cleared it.
-    return;
-  }
-
-  {
-    HandleScope handle_scope(isolate());
-    env_->UnassignFromContext(context());
-  }
+void ShadowRealm::Trace(cppgc::Visitor* visitor) const {
+  Realm::Trace(visitor);
 }
 
 v8::Local<v8::Context> ShadowRealm::context() const {
-  Local<Context> ctx = PersistentToLocal::Default(isolate_, context_);
+  Local<Context> ctx = context_.Get(isolate_);
   DCHECK(!ctx.IsEmpty());
   return ctx;
 }
 
-// V8 can not infer reference cycles between global persistent handles, e.g.
-// the Realm's Context handle and the per-realm function handles.
-// Attach the per-realm strong persistent values' lifetime to the context's
-// global object to avoid the strong global references to the per-realm objects
-// keep the context alive indefinitely.
+// Per-realm strong value accessors. The per-realm values should avoid being
+// accessed across realms.
 #define V(PropertyName, TypeName)                                              \
   v8::Local<TypeName> ShadowRealm::PropertyName() const {                      \
-    return PersistentToLocal::Default(isolate_, PropertyName##_);              \
+    return PropertyName##_.Get(isolate_);                                      \
   }                                                                            \
   void ShadowRealm::set_##PropertyName(v8::Local<TypeName> value) {            \
-    HandleScope scope(isolate_);                                               \
-    PropertyName##_.Reset(isolate_, value);                                    \
-    v8::Local<v8::Context> ctx = context();                                    \
-    if (value.IsEmpty()) {                                                     \
-      ctx->Global()                                                            \
-          ->SetPrivate(ctx,                                                    \
-                       isolate_data()->per_realm_##PropertyName(),             \
-                       v8::Undefined(isolate_))                                \
-          .ToChecked();                                                        \
-    } else {                                                                   \
-      PropertyName##_.SetWeak();                                               \
-      ctx->Global()                                                            \
-          ->SetPrivate(ctx, isolate_data()->per_realm_##PropertyName(), value) \
-          .ToChecked();                                                        \
-    }                                                                          \
+    DCHECK_IMPLIES(!value.IsEmpty(),                                           \
+                   isolate()->GetCurrentContext() == context());               \
+    PropertyName##_.Reset(isolate(), value);                                   \
   }
 PER_REALM_STRONG_PERSISTENT_VALUES(V)
 #undef V

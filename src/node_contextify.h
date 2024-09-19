@@ -4,7 +4,7 @@
 #if defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 
 #include "base_object-inl.h"
-#include "cppgc_helpers.h"
+#include "cppgc_helpers-inl.h"
 #include "node_context_data.h"
 #include "node_errors.h"
 

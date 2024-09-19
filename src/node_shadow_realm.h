@@ -3,18 +3,31 @@
 
 #if defined(NODE_WANT_INTERNALS) && NODE_WANT_INTERNALS
 
+#include "cppgc/prefinalizer.h"
+#include "env.h"
 #include "node_realm.h"
 #include "v8.h"
 
 namespace node {
 namespace shadow_realm {
 
-class ShadowRealm : public Realm {
+class ShadowRealm final : public cppgc::GarbageCollected<ShadowRealm>,
+                          public cppgc::NameProvider,
+                          public Realm,
+                          public Cleanable {
+  CPPGC_USING_PRE_FINALIZER(ShadowRealm, Prefinalize);
+
  public:
   static ShadowRealm* New(Environment* env);
 
+  explicit ShadowRealm(Environment* env);
+  ~ShadowRealm();
+
   SET_MEMORY_INFO_NAME(ShadowRealm)
   SET_SELF_SIZE(ShadowRealm)
+
+  SET_CPPGC_NAME(ShadowRealm)
+  void Trace(cppgc::Visitor* visitor) const final;
 
   v8::Local<v8::Context> context() const override;
 
@@ -28,11 +41,10 @@ class ShadowRealm : public Realm {
   v8::MaybeLocal<v8::Value> BootstrapRealm() override;
 
  private:
-  static void WeakCallback(const v8::WeakCallbackInfo<ShadowRealm>& data);
-  static void DeleteMe(void* data);
-
-  explicit ShadowRealm(Environment* env);
-  ~ShadowRealm();
+  void Prefinalize();
+  // This must be invoked outside of the destructor, which is invoked during
+  // cppgc gc phase.
+  void Clean() override;
 };
 
 v8::MaybeLocal<v8::Context> HostCreateShadowRealmContextCallback(

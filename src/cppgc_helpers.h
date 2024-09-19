@@ -6,13 +6,15 @@
 #include <type_traits>  // std::remove_reference
 #include "cppgc/garbage-collected.h"
 #include "cppgc/name-provider.h"
-#include "env.h"
 #include "memory_tracker.h"
 #include "v8-cppgc.h"
 #include "v8-sandbox.h"
 #include "v8.h"
 
 namespace node {
+
+class Environment;
+class Realm;
 
 /**
  * This is a helper mixin with a BaseObject-like interface to help
@@ -48,48 +50,21 @@ class CppgcMixin : public cppgc::GarbageCollectedMixin {
   // invoked from the child class constructor, per cppgc::GarbageCollectedMixin
   // rules.
   template <typename T>
-  static void Wrap(T* ptr, Environment* env, v8::Local<v8::Object> obj) {
-    CHECK_GE(obj->InternalFieldCount(), T::kInternalFieldCount);
-    ptr->env_ = env;
-    v8::Isolate* isolate = env->isolate();
-    ptr->traced_reference_ = v8::TracedReference<v8::Object>(isolate, obj);
-    v8::Object::Wrap<v8::CppHeapPointerTag::kDefaultTag>(isolate, obj, ptr);
-    // Keep the layout consistent with BaseObjects.
-    obj->SetAlignedPointerInInternalField(
-        kEmbedderType, env->isolate_data()->embedder_id_for_cppgc());
-    obj->SetAlignedPointerInInternalField(kSlot, ptr);
-  }
+  static inline void Wrap(T* ptr, Realm* realm, v8::Local<v8::Object> obj);
 
-  v8::Local<v8::Object> object() const {
-    return traced_reference_.Get(env_->isolate());
-  }
+  inline v8::Local<v8::Object> object() const;
 
-  Environment* env() const { return env_; }
+  inline Environment* env() const;
 
   template <typename T>
-  static T* Unwrap(v8::Local<v8::Object> obj) {
-    // We are not using v8::Object::Unwrap currently because that requires
-    // access to isolate which the ASSIGN_OR_RETURN_UNWRAP macro that we'll shim
-    // with ASSIGN_OR_RETURN_UNWRAP_GC doesn't take, and we also want a
-    // signature consistent with BaseObject::Unwrap() to avoid churn. Since
-    // cppgc-managed objects share the same layout as BaseObjects, just unwrap
-    // from the pointer in the internal field, which should be valid as long as
-    // the object is still alive.
-    if (obj->InternalFieldCount() != T::kInternalFieldCount) {
-      return nullptr;
-    }
-    T* ptr = static_cast<T*>(obj->GetAlignedPointerFromInternalField(T::kSlot));
-    return ptr;
-  }
+  static inline T* Unwrap(v8::Local<v8::Object> obj);
 
   // Subclasses are expected to invoke CppgcMixin::Trace() in their own Trace()
   // methods.
-  void Trace(cppgc::Visitor* visitor) const override {
-    visitor->Trace(traced_reference_);
-  }
+  inline void Trace(cppgc::Visitor* visitor) const override;
 
  private:
-  Environment* env_;
+  Realm* realm_;
   v8::TracedReference<v8::Object> traced_reference_;
 };
 

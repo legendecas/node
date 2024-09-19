@@ -29,14 +29,17 @@ Realm::~Realm() {
 }
 
 void Realm::MemoryInfo(MemoryTracker* tracker) const {
-#define V(PropertyName, TypeName)                                              \
-  tracker->TrackField(#PropertyName, PropertyName());
-  PER_REALM_STRONG_PERSISTENT_VALUES(V)
-#undef V
-
   tracker->TrackField("base_object_list", base_object_list_);
   tracker->TrackField("builtins_with_cache", builtins_with_cache);
   tracker->TrackField("builtins_without_cache", builtins_without_cache);
+}
+
+void Realm::Trace(cppgc::Visitor* visitor) const {
+#define V(PropertyName, TypeName) visitor->Trace(PropertyName##_);
+  PER_REALM_STRONG_PERSISTENT_VALUES(V)
+#undef V
+
+  visitor->Trace(context_);
 }
 
 void Realm::CreateProperties() {
@@ -276,14 +279,14 @@ void Realm::VerifyNoStrongBaseObjects() {
 }
 
 v8::Local<v8::Context> Realm::context() const {
-  return PersistentToLocal::Strong(context_);
+  return context_.Get(isolate());
 }
 
 // Per-realm strong value accessors. The per-realm values should avoid being
 // accessed across realms.
 #define V(PropertyName, TypeName)                                              \
   v8::Local<TypeName> PrincipalRealm::PropertyName() const {                   \
-    return PersistentToLocal::Strong(PropertyName##_);                         \
+    return PropertyName##_.Get(isolate_);                                      \
   }                                                                            \
   void PrincipalRealm::set_##PropertyName(v8::Local<TypeName> value) {         \
     DCHECK_IMPLIES(!value.IsEmpty(),                                           \
@@ -306,10 +309,22 @@ PrincipalRealm::PrincipalRealm(Environment* env,
 }
 
 PrincipalRealm::~PrincipalRealm() {
+  // This can be invoked by the cppgc garbage collector. It is not safe to
+  // access any heap objects.
+}
+
+void PrincipalRealm::Dispose() {
+  // This is invoked on the creation thread. It is safe to access the heap
+  // object graph here.
   DCHECK(!context_.IsEmpty());
 
   HandleScope handle_scope(isolate());
   env_->UnassignFromContext(context());
+  env_ = nullptr;
+}
+
+void PrincipalRealm::Trace(cppgc::Visitor* visitor) const {
+  Realm::Trace(visitor);
 }
 
 MaybeLocal<Value> PrincipalRealm::BootstrapRealm() {

@@ -808,7 +808,6 @@ void Environment::set_process_exit_handler(
 #define VP(PropertyName, StringValue) V(v8::Private, PropertyName)
 #define VY(PropertyName, StringValue) V(v8::Symbol, PropertyName)
 #define VS(PropertyName, StringValue) V(v8::String, PropertyName)
-#define VR(PropertyName, TypeName) V(v8::Private, per_realm_##PropertyName)
 #define V(TypeName, PropertyName)                                             \
   inline                                                                      \
   v8::Local<TypeName> IsolateData::PropertyName() const {                     \
@@ -817,9 +816,7 @@ void Environment::set_process_exit_handler(
   PER_ISOLATE_PRIVATE_SYMBOL_PROPERTIES(VP)
   PER_ISOLATE_SYMBOL_PROPERTIES(VY)
   PER_ISOLATE_STRING_PROPERTIES(VS)
-  PER_REALM_STRONG_PERSISTENT_VALUES(VR)
 #undef V
-#undef VR
 #undef VS
 #undef VY
 #undef VP
@@ -880,7 +877,7 @@ v8::Local<v8::Context> Environment::context() const {
 }
 
 Realm* Environment::principal_realm() const {
-  return principal_realm_.get();
+  return principal_realm_.Get();
 }
 
 inline void Environment::set_heap_snapshot_near_heap_limit(uint32_t limit) {
