@@ -20,9 +20,12 @@ async function main() {
   // Make sure that the module can not be resolved relative to __filename.
   assert.throws(() => require.resolve(relativePath), { code: 'MODULE_NOT_FOUND' });
 
-  // Resolve relative to the current working directory.
-  const getCounter = await realm.importValue(relativePath, 'getCounter');
-  assert.strictEqual(typeof getCounter, 'function');
+  // Can not resolve a relative filepath in ShadowRealm.
+  // Property `code` can not pass cross realm boundary.
+  await assert.rejects(() => realm.importValue(relativePath, 'getCounter'), {
+    name: 'TypeError',
+    message: 'Cannot import in ShadowRealm (TypeError: Can not resolve relative specifiers without an origin)',
+  });
 }
 
 main().then(common.mustCall());

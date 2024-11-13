@@ -2234,6 +2234,14 @@ this error will not occur with standard builds of Node.js.
 A module file could not be resolved by the ECMAScript modules loader while
 attempting an `import` operation or when loading the program entry point.
 
+<a id="ERR_MODULE_NO_ORIGIN"></a>
+
+### `ERR_MODULE_NO_ORIGIN`
+
+A relative module specifier could not be resolved by the ECMAScript modules loader
+while there is no origin. Use a custom loader to resolve the module specifier
+to an absolute URL instead.
+
 <a id="ERR_MULTIPLE_CALLBACK"></a>
 
 ### `ERR_MULTIPLE_CALLBACK`
