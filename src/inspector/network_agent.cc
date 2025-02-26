@@ -17,6 +17,8 @@ using v8::Nothing;
 using v8::Object;
 using v8::Value;
 
+namespace {
+
 // Get a protocol string property from the object.
 Maybe<protocol::String> ObjectGetProtocolString(v8::Local<v8::Context> context,
                                                 Local<Object> object,
@@ -65,6 +67,20 @@ Maybe<int> ObjectGetInt(v8::Local<v8::Context> context,
     return Nothing<int>();
   }
   return Just(value.As<v8::Int32>()->Value());
+}
+
+// Get a protocol int property from the object.
+Maybe<bool> ObjectGetBool(v8::Local<v8::Context> context,
+                          Local<Object> object,
+                          const char* property) {
+  HandleScope handle_scope(context->GetIsolate());
+  Local<Value> value;
+  if (!object->Get(context, OneByteString(context->GetIsolate(), property))
+           .ToLocal(&value) ||
+      !value->IsBoolean()) {
+    return Nothing<bool>();
+  }
+  return Just(value.As<v8::Boolean>()->Value());
 }
 
 // Get an object property from the object.
@@ -175,6 +191,85 @@ std::unique_ptr<protocol::Network::Response> createResponseFromObject(
       .setHeaders(std::move(headers))
       .build();
 }
+
+// Create a protocol::Network::WebSocketRequest from the v8 object.
+std::unique_ptr<protocol::Network::WebSocketRequest>
+createWebSocketRequestFromObject(v8::Local<v8::Context> context,
+                                 Local<Object> request) {
+  HandleScope handle_scope(context->GetIsolate());
+  Local<Object> headers_obj;
+  if (!ObjectGetObject(context, request, "headers").ToLocal(&headers_obj)) {
+    return {};
+  }
+  std::unique_ptr<protocol::Network::Headers> headers =
+      createHeadersFromObject(context, headers_obj);
+  if (!headers) {
+    return {};
+  }
+
+  return protocol::Network::WebSocketRequest::create()
+      .setHeaders(std::move(headers))
+      .build();
+}
+
+// Create a protocol::Network::WebSocketResponse from the v8 object.
+std::unique_ptr<protocol::Network::WebSocketResponse>
+createWebSocketResponseFromObject(v8::Local<v8::Context> context,
+                                  Local<Object> response) {
+  HandleScope handle_scope(context->GetIsolate());
+  int status;
+  if (!ObjectGetInt(context, response, "status").To(&status)) {
+    return {};
+  }
+  protocol::String statusText;
+  if (!ObjectGetProtocolString(context, response, "statusText")
+           .To(&statusText)) {
+    return {};
+  }
+  Local<Object> headers_obj;
+  if (!ObjectGetObject(context, response, "headers").ToLocal(&headers_obj)) {
+    return {};
+  }
+  std::unique_ptr<protocol::Network::Headers> headers =
+      createHeadersFromObject(context, headers_obj);
+  if (!headers) {
+    return {};
+  }
+
+  return protocol::Network::WebSocketResponse::create()
+      .setStatus(status)
+      .setStatusText(statusText)
+      .setHeaders(std::move(headers))
+      .build();
+}
+
+// Create a protocol::Network::WebSocketFrame from the v8 object.
+std::unique_ptr<protocol::Network::WebSocketFrame>
+createWebSocketFrameFromObject(v8::Local<v8::Context> context,
+                               Local<Object> frame) {
+  HandleScope handle_scope(context->GetIsolate());
+  int opcode;
+  if (!ObjectGetInt(context, frame, "opcode").To(&opcode)) {
+    return {};
+  }
+  bool mask;
+  if (!ObjectGetBool(context, frame, "mask").To(&mask)) {
+    return {};
+  }
+  protocol::String payload_data;
+  if (!ObjectGetProtocolString(context, frame, "payloadData")
+           .To(&payload_data)) {
+    return {};
+  }
+
+  return protocol::Network::WebSocketFrame::create()
+      .setOpcode(opcode)
+      .setMask(mask)
+      .setPayloadData(payload_data)
+      .build();
+}
+
+}  // namespace
 
 NetworkAgent::NetworkAgent(NetworkInspector* inspector,
                            v8_inspector::V8Inspector* v8_inspector)
@@ -309,6 +404,157 @@ void NetworkAgent::loadingFinished(v8::Local<v8::Context> context,
   }
 
   frontend_->loadingFinished(request_id, timestamp);
+}
+
+void NetworkAgent::webSocketClosed(v8::Local<v8::Context> context,
+                                   v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+
+  frontend_->webSocketClosed(request_id, timestamp);
+}
+
+void NetworkAgent::webSocketCreated(v8::Local<v8::Context> context,
+                                    v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  protocol::String url;
+  if (!ObjectGetProtocolString(context, params, "url").To(&url)) {
+    return;
+  }
+  std::unique_ptr<protocol::Network::Initiator> initiator =
+      protocol::Network::Initiator::create()
+          .setType(protocol::Network::Initiator::TypeEnum::Script)
+          .setStack(
+              v8_inspector_->captureStackTrace(true)->buildInspectorObject(0))
+          .build();
+
+  frontend_->webSocketCreated(request_id, url, std::move(initiator));
+}
+
+void NetworkAgent::webSocketFrameError(v8::Local<v8::Context> context,
+                                       v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+  protocol::String error_message;
+  if (!ObjectGetProtocolString(context, params, "errorMessage")
+           .To(&error_message)) {
+    return;
+  }
+
+  frontend_->webSocketFrameError(request_id, timestamp, error_message);
+}
+
+void NetworkAgent::webSocketFrameReceived(v8::Local<v8::Context> context,
+                                          v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+  Local<Object> frame_object;
+  if (!ObjectGetObject(context, params, "frame").ToLocal(&frame_object)) {
+    return;
+  }
+  std::unique_ptr<protocol::Network::WebSocketFrame> frame =
+      createWebSocketFrameFromObject(context, frame_object);
+  if (!frame) {
+    return;
+  }
+
+  frontend_->webSocketFrameReceived(request_id, timestamp, std::move(frame));
+}
+
+void NetworkAgent::webSocketFrameSent(v8::Local<v8::Context> context,
+                                      v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+  Local<Object> frame_object;
+  if (!ObjectGetObject(context, params, "frame").ToLocal(&frame_object)) {
+    return;
+  }
+  std::unique_ptr<protocol::Network::WebSocketFrame> frame =
+      createWebSocketFrameFromObject(context, frame_object);
+  if (!frame) {
+    return;
+  }
+
+  frontend_->webSocketFrameSent(request_id, timestamp, std::move(frame));
+}
+
+void NetworkAgent::webSocketHandshakeResponseReceived(
+    v8::Local<v8::Context> context, v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+  Local<Object> response_object;
+  if (!ObjectGetObject(context, params, "response").ToLocal(&response_object)) {
+    return;
+  }
+  std::unique_ptr<protocol::Network::WebSocketResponse> response =
+      createWebSocketResponseFromObject(context, response_object);
+  if (!response) {
+    return;
+  }
+
+  frontend_->webSocketHandshakeResponseReceived(
+      request_id, timestamp, std::move(response));
+}
+
+void NetworkAgent::webSocketWillSendHandshakeRequest(
+    v8::Local<v8::Context> context, v8::Local<v8::Object> params) {
+  protocol::String request_id;
+  if (!ObjectGetProtocolString(context, params, "requestId").To(&request_id)) {
+    return;
+  }
+  double timestamp;
+  if (!ObjectGetDouble(context, params, "timestamp").To(&timestamp)) {
+    return;
+  }
+  double wall_time;
+  if (!ObjectGetDouble(context, params, "wallTime").To(&wall_time)) {
+    return;
+  }
+  Local<Object> request_object;
+  if (!ObjectGetObject(context, params, "request").ToLocal(&request_object)) {
+    return;
+  }
+  std::unique_ptr<protocol::Network::WebSocketRequest> request =
+      createWebSocketRequestFromObject(context, request_object);
+  if (!request) {
+    return;
+  }
+
+  frontend_->webSocketWillSendHandshakeRequest(
+      request_id, timestamp, wall_time, std::move(request));
 }
 
 }  // namespace inspector
