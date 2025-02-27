@@ -1,0 +1,7 @@
+Name: perfetto
+URL: https://android.googlesource.com/platform/external/perfetto/
+Version: 0
+Revision: 33a4fd07897a9a648664926ea27769278a19ff13
+License: Apache License
+License File: LICENSE
+
