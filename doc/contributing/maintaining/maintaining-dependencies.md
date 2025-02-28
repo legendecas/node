@@ -29,6 +29,7 @@ This a list of all the dependencies:
 * [npm][]
 * [openssl][]
 * [postject][]
+* [protobuf][]
 * [simdjson][]
 * [sqlite][]
 * [undici][]
@@ -357,6 +358,14 @@ See [maintaining-openssl][] for more information.
 
 The [postject](https://github.com/nodejs/postject) dependency is used for the
 [Single Executable strategic initiative](https://github.com/nodejs/single-executable).
+
+### protobuf
+
+The [protobuf](https://chromium.googlesource.com/chromium/src/third_party/protobuf) dependency
+is used internally for perfetto tracing data serialization.
+
+Node.js currently uses Chromium's fork of protobuf, which closely tracks the main
+protobuf releases with additional floating patches for perfetto support.
 
 ### simdjson
 
