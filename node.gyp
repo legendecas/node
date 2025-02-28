@@ -1191,6 +1191,7 @@
         'deps/histogram/histogram.gyp:histogram',
         'deps/nbytes/nbytes.gyp:nbytes',
         'tools/v8_gypfiles/abseil.gyp:abseil',
+        'deps/protobuf/protobuf.gyp:protoc',
       ],
 
       'includes': [
