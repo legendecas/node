@@ -33,6 +33,7 @@
         ],
       }],
     ],
+    'perfetto_gyp_file': '../../deps/perfetto/perfetto.gyp',
   },
   'includes': ['toolchain.gypi', 'features.gypi'],
   'target_defaults': {
@@ -276,6 +277,13 @@
       'sources': [
         '<(V8_ROOT)/src/init/setup-isolate-full.cc',
       ],
+      'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
+      ],
     },  # v8_init
     {
       # This target is used to work around a GCC issue that causes the
@@ -299,6 +307,11 @@
         '<(SHARED_INTERMEDIATE_DIR)/torque-generated/src/builtins/wasm-to-js-tq-csa.cc',
       ],
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['v8_enable_i18n_support==1', {
           'dependencies': [
             '<(icu_gyp_path):icui18n',
@@ -327,6 +340,11 @@
         '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "\\"v8_initializers.*?sources = ")',
       ],
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['v8_enable_webassembly==1', {
           'dependencies': [
             'v8_initializers_slow',
@@ -951,6 +969,11 @@
         'abseil.gyp:abseil',
       ],
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['v8_enable_maglev==0', {
           'sources': [
             '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_header_set.\\"v8_internal_headers\\".*?!v8_enable_maglev.*?sources \\+= ")',
@@ -1083,6 +1106,11 @@
         '<@(inspector_all_sources)',
       ],
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['v8_enable_snapshot_compression==1', {
           'sources': [
             '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "\\"v8_base_without_compiler.*?v8_enable_snapshot_compression.*?sources \\+= ")',
@@ -1661,8 +1689,7 @@
             '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "\\"v8_libplatform.*?v8_use_perfetto.*?sources += ")',
           ],
           'dependencies': [
-            '<(V8_ROOT)/third_party/perfetto:libperfetto',
-            '<(V8_ROOT)/third_party/perfetto/protos/perfetto/trace:lite',
+            '<(perfetto_gyp_file):libperfetto',
           ],
         }],
         ['v8_enable_system_instrumentation==1 and is_win', {
@@ -1762,6 +1789,11 @@
         },
       },
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['want_separate_host_toolset', {
           'toolsets': ['host'],
         }],

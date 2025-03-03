@@ -84,7 +84,7 @@
     'v8_enable_sandbox%': 0,
     'v8_enable_v8_checks%': 0,
     'v8_enable_zone_compression%': 0,
-    'v8_use_perfetto': 0,
+    'v8_use_perfetto%': 0,
     'tsan%': 0,
 
     ##### end V8 defaults #####

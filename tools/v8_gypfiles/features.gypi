@@ -202,8 +202,7 @@
     # Use Siphash as added protection against hash flooding attacks.
     'v8_use_siphash%': 0,
 
-    # Use Perfetto (https://perfetto.dev) as the default TracingController. Not
-    # currently implemented.
+    # Use Perfetto (https://perfetto.dev) as the default TracingController.
     'v8_use_perfetto%': 0,
 
     # Enable map packing & unpacking (sets -dV8_MAP_PACKING).

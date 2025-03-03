@@ -1,9 +1,54 @@
 {
-  "variables": {
-    "GN-scrapper": "../../tools/v8_gypfiles/GN-scraper",
-    "perfetto_root": "./",
+  'variables': {
+    'perfetto_root': './',
+    'perfetto_gen_root': '<(SHARED_INTERMEDIATE_DIR)/perfetto',
+    'protobuf_gyp_file': '../protobuf/protobuf.gyp',
+    'zlib_gyp_file': '../zlib/zlib.gyp',
+    'absl_gyp_file': '../../tools/v8_gypfiles/abseil.gyp',
+    'protoc_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
+    'protozero_plugin_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protozero_plugin<(EXECUTABLE_SUFFIX)',
+    'cppgen_plugin_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)cppgen_plugin<(EXECUTABLE_SUFFIX)',
+    'proto_cpp_files': [
+      # Generates .gen.h and .gen.cc, and does not depend on `protobuf_lite` nor `protobuf_full`.
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/common/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/android/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/ftrace/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/gpu/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/inode_file/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/interceptors/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/power/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/process_stats/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/profiling/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/statsd/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/sys_stats/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/system_info/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/track_event/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/BUILD.gn" "proto_sources_minimal = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/track_event/BUILD.gn" "sources = ")',
+    ],
+    'proto_lite_files': [
+      # Generates libproto lite file .pb.h and .pb.cc, and depends on `protobuf_lite`.
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/common/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/BUILD.gn" "proto_sources_minimal = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/track_event/BUILD.gn" "sources = ")',
+    ],
+    'proto_zero_files': [
+      # Generates header only proto file .pbzero.h and .pbzero.cc (empty).
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/common/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/config/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/BUILD.gn" "proto_sources_non_minimal = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/BUILD.gn" "proto_sources_minimal = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/android/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/chrome/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/gpu/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/perfetto/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/profiling/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/track_event/BUILD.gn" "sources = ")',
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/interned_data/BUILD.gn" "sources = ")',
+    ],
   },
-  "targets": [
+  'targets': [
     {
       'target_name': 'libperfetto',
       'type': 'static_library',
@@ -12,25 +57,35 @@
         'GCC_SYMBOLS_PRIVATE_EXTERN': 'YES',  # -fvisibility=hidden
       },
       'dependencies': [
-        '../protobuf/protobuf.gyp:protobuf-lite',
-        '../protobuf/protobuf.gyp:protoc',
-        # ':ipc_plugin',
-        # ':protozero_plugin',
-        # ':cppgen_plugin',
-        # ':protoc-gen',
-        '../zlib/zlib.gyp:zlib',
+        'perfetto_base',
+        'protozero_plugin',
+        'cppgen_plugin',
+        '<(absl_gyp_file):abseil',
+        '<(protobuf_gyp_file):protobuf_lite',
+        '<(protobuf_gyp_file):protoc',
+        '<(zlib_gyp_file):zlib',
       ],
       'include_dirs': [
-        'config',
-        '<@(SHARED_INTERMEDIATE_DIR)/perfetto/protozero',
-        '<@(SHARED_INTERMEDIATE_DIR)/perfetto/cppgen',
-        '<@(SHARED_INTERMEDIATE_DIR)/perfetto/cpp',
-        'include',
-        'src',
+        '<(perfetto_root)/include',
+        '<(perfetto_root)',
+        '<(perfetto_gen_root)/cpp',
+        '<(perfetto_gen_root)/lite',
+        '<(perfetto_gen_root)/pbzero',
+      ],
+      'export_dependent_settings': [
+        'perfetto_base',
       ],
       'direct_dependent_settings': {
+        'defines': [
+          'GOOGLE_PROTOBUF_NO_RTTI',
+          'GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER',
+        ],
         'include_dirs': [
-          'include',
+          '<(perfetto_root)/include',
+          # Do not expose <(perfetto_gen_root)/lite headers, which depend on `protobuf_lite` library.
+          # For proto headers.
+          '<(perfetto_gen_root)/cpp',
+          '<(perfetto_gen_root)/pbzero',
         ]
       },
       'defines': [
@@ -38,48 +93,48 @@
         'GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER',
       ],
       'sources': [
-        # include/perfetto/base
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/base/BUILD.gn" "\"base.*?sources = ")',
         # include/perfetto/public:base
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/public/BUILD.gn" "\"base.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/include/perfetto/public/BUILD.gn" "\\"base.*?sources = ")',
         # include/perfetto/tracing
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/tracing/BUILD.gn" "\"tracing.*?sources = ")',
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/tracing/BUILD.gn" "\"forward_decls.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/include/perfetto/tracing/BUILD.gn" "\\"tracing.*?sources = ")',
         # include/perfetto/tracing/core
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/tracing/core/BUILD.gn" "\"core.*?sources = ")',
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/include/perfetto/tracing/core/BUILD.gn" "\"forward_decls.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/include/perfetto/tracing/core/BUILD.gn" "\\"core.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/include/perfetto/tracing/core/BUILD.gn" "\\"forward_decls.*?sources = ")',
 
-        # base
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/base/BUILD.gn" "\"base.*?sources = ")',
         # base:clock_snapshots
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/base/BUILD.gn" "\"clock_snapshots.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/base/BUILD.gn" "\\"clock_snapshots.*?sources = ")',
         # base:version
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/base/BUILD.gn" "\"version.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/base/BUILD.gn" "\\"version.*?sources = ")',
 
         # trace_processor/importers/memory_tracker:graph_processor
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/trace_processor/importers/memory_tracker/BUILD.gn" "\"graph_processor.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/importers/memory_tracker/BUILD.gn" "\\"graph_processor.*?sources = ")',
 
         # tracing:client_api_without_backends
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/BUILD.gn" "\"client_api_without_backends.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"client_api_without_backends.*?sources = ")',
         # tracing:in_process_backend
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/BUILD.gn" "\"in_process_backend.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"in_process_backend.*?sources = ")',
         # tracing:system_backend_fake
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/BUILD.gn" "\"system_backend_fake.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"system_backend_fake.*?sources = ")',
         # tracing:common
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/BUILD.gn" "\"common.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"common.*?sources = ")',
         # tracing/core:core
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/core/BUILD.gn" "\"core.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/core/BUILD.gn" "\\"core.*?sources = ")',
         # tracing/service:service
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/tracing/service/BUILD.gn" "\"service.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/service/BUILD.gn" "\\"service.*?sources = ")',
 
         # protozero
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/BUILD.gn" "\\"protozero.*?sources = ")',
         # protozero/filtering:message_filter
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/filtering/BUILD.gn" "\\"message_filter.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/filtering/BUILD.gn" "\\"bytecode_parser.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/filtering/BUILD.gn" "\\"bytecode_common.*?sources = ")',
         # protozero/filtering:string_filter
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/filtering/BUILD.gn" "\\"string_filter.*?sources = ")',
 
         # android_stats
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/android_stats/BUILD.gn" "\"android_stats.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/android_stats/BUILD.gn" "\\"android_stats.*?sources = ")',
         # android_stats:perfetto_atoms
-        '<!@pymod_do_main(<(GN-scrapper) "<(perfetto_root)/src/android_stats/BUILD.gn" "\"perfetto_atoms.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/android_stats/BUILD.gn" "\\"perfetto_atoms.*?sources = ")',
 
         # protos/perfetto/common:zero
         # protos/perfetto/common:cpp
@@ -89,7 +144,176 @@
         # protos/perfetto/config/track_event:cpp
         # protos/perfetto/trace:zero
         # protos/perfetto/trace/perfetto:zero
-      ]
+      ],
+      'actions': [
+        {
+          'action_name': 'gen_proto_cpp',
+          'inputs': [
+            '<@(proto_cpp_files)',
+          ],
+          'outputs': [
+            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/cpp" gen <@(proto_cpp_files))',
+          ],
+          'process_outputs_as_sources': 1,
+          # Refer to deps/perfetto/gn/proto_library.gni for options
+          'action': [
+            '<(protoc_exec)',
+            '--plugin=protoc-gen-plugin=<(cppgen_plugin_exec)',
+            '--plugin_out=wrapper_namespace=gen:<(perfetto_gen_root)/cpp',
+            '--proto_path',
+            '<(perfetto_root)',
+            '<@(proto_cpp_files)',
+          ],
+          'message': 'Generating proto cpp sources'
+        },
+        {
+          'action_name': 'gen_proto_zero',
+          'inputs': [
+            '<@(proto_zero_files)',
+          ],
+          'outputs': [
+            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/pbzero" pbzero <@(proto_zero_files))',
+          ],
+          'process_outputs_as_sources': 1,
+          # Refer to deps/perfetto/gn/proto_library.gni for options
+          'action': [
+            '<(protoc_exec)',
+            '--plugin=protoc-gen-plugin=<(protozero_plugin_exec)',
+            '--plugin_out=wrapper_namespace=pbzero:<(perfetto_gen_root)/pbzero',
+            '--proto_path',
+            '<(perfetto_root)',
+            '<@(proto_zero_files)',
+          ],
+          'message': 'Generating proto zero sources'
+        },
+        {
+          'action_name': 'gen_proto_lite',
+          'inputs': [
+            '<@(proto_lite_files)',
+          ],
+          'outputs': [
+            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/lite" pb <@(proto_lite_files))',
+          ],
+          'process_outputs_as_sources': 1,
+          # Refer to deps/perfetto/gn/proto_library.gni for options
+          'action': [
+            '<(protoc_exec)',
+            '--proto_path',
+            '<(perfetto_root)',
+            '--cpp_out',
+            'lite=true:<(perfetto_gen_root)/lite',
+            '<@(proto_lite_files)',
+          ],
+          'message': 'Generating proto lite sources'
+        },
+      ],
+    },
+    {
+      'target_name': 'perfetto_base',
+      'type': 'static_library',
+      'include_dirs': [
+        '<(perfetto_root)/include',
+        '<(perfetto_root)',
+        '<(perfetto_gen_root)/base',
+      ],
+      'direct_dependent_settings': {
+        'include_dirs': [
+          '<(perfetto_gen_root)/base',
+        ],
+      },
+      'sources': [
+        # include/perfetto/base
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/include/perfetto/base/BUILD.gn" "\\"base.*?sources = ")',
+        # base
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/base/BUILD.gn" "\\"base.*?sources = ")',
+      ],
+      'actions': [
+        {
+          'action_name': 'gen_buildflags',
+          'inputs': [
+            '<(perfetto_root)/gn/write_buildflag_header.py',
+          ],
+          'outputs': [
+            '<@(perfetto_gen_root)/base/perfetto_build_flags.h',
+          ],
+          'process_outputs_as_sources': 1,
+          'action': [
+            '<(python)',
+            '<(perfetto_root)gn/write_buildflag_header.py',
+            "--out",
+            "<(perfetto_gen_root)/base/perfetto_build_flags.h",
+            "--rsp",
+            '<!pymod_do_main(gen_buildflag \
+              "--flags" \
+              "PERFETTO_ANDROID_BUILD=false" \
+              "PERFETTO_CHROMIUM_BUILD=false" \
+              "PERFETTO_STANDALONE_BUILD=false" \
+              "PERFETTO_START_DAEMONS=false" \
+              "PERFETTO_IPC=false" \
+              "PERFETTO_WATCHDOG=false" \
+              "PERFETTO_COMPONENT_BUILD=false" \
+              "PERFETTO_ENABLE_ETM_IMPORTER=false" \
+              "PERFETTO_FORCE_DLOG_ON=false" \
+              "PERFETTO_FORCE_DLOG_OFF=false" \
+              "PERFETTO_FORCE_DCHECK_ON=false" \
+              "PERFETTO_FORCE_DCHECK_OFF=false" \
+              "PERFETTO_VERBOSE_LOGS=false" \
+              "PERFETTO_VERSION_GEN=false" \
+              "PERFETTO_TP_PERCENTILE=false" \
+              "PERFETTO_TP_LINENOISE=false" \
+              "PERFETTO_TP_HTTPD=false" \
+              "PERFETTO_TP_JSON=false" \
+              "PERFETTO_TP_INSTRUMENTS=false" \
+              "PERFETTO_LOCAL_SYMBOLIZER=false" \
+              "PERFETTO_ZLIB=true" \
+              "PERFETTO_TRACED_PERF=false" \
+              "PERFETTO_HEAPPROFD=false" \
+              "PERFETTO_STDERR_CRASH_DUMP=false" \
+              "PERFETTO_X64_CPU_OPT=false" \
+              "PERFETTO_LLVM_DEMANGLE=false" \
+              "PERFETTO_SYSTEM_CONSUMER=false" \
+              "PERFETTO_THREAD_SAFETY_ANNOTATIONS=false" \
+            )',
+          ],
+          'message': 'Generating build flags',
+        },
+      ],
+    },
+    {
+      'target_name': 'protozero_plugin',
+      'type': 'executable',
+      'include_dirs': [
+        '<(perfetto_root)/include',
+        '<(perfetto_root)',
+        '<(perfetto_gen_root)',
+      ],
+      'dependencies': [
+        'perfetto_base',
+        '<(protobuf_gyp_file):protoc_lib',
+        '<(absl_gyp_file):abseil',
+      ],
+      'sources': [
+        # deps/perfetto/src/protozero/protoc_plugin/BUILD.gn
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/protoc_plugin/BUILD.gn" "\\"protozero_plugin.*?sources = ")',
+      ],
+    },
+    {
+      'target_name': 'cppgen_plugin',
+      'type': 'executable',
+      'include_dirs': [
+        '<(perfetto_root)/include',
+        '<(perfetto_root)',
+        '<(perfetto_gen_root)',
+      ],
+      'dependencies': [
+        'perfetto_base',
+        '<(protobuf_gyp_file):protoc_lib',
+        '<(absl_gyp_file):abseil',
+      ],
+      'sources': [
+        # deps/perfetto/src/protozero/protoc_plugin/BUILD.gn
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/protozero/protoc_plugin/BUILD.gn" "\\"cppgen_plugin.*?sources = ")',
+      ],
     },
   ]
 }
