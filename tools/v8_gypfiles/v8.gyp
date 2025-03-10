@@ -686,6 +686,14 @@
               }],
             ],
           }],
+          ['v8_use_perfetto==1', {
+            'sources!': [
+              '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_header_set.\\"v8_internal_headers\\".*?v8_use_perfetto.*?sources \\-= ")',
+            ],
+            'sources': [
+              '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_header_set.\\"v8_internal_headers\\".*?v8_use_perfetto.*?sources \\+= ")',
+            ],
+          }],
           ['v8_enable_webassembly==1', {
             'sources': [
               '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_header_set.\\"v8_internal_headers\\".*?v8_enable_webassembly.*?sources \\+= ")',
@@ -1107,6 +1115,9 @@
       ],
       'conditions': [
         ['v8_use_perfetto==1', {
+          'sources': [
+            '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "\\"v8_base_without_compiler.*?v8_use_perfetto.*?sources \\+= ")',
+          ],
           'dependencies': [
             '<(perfetto_gyp_file):libperfetto',
           ],
@@ -1950,6 +1961,13 @@
       'direct_dependent_settings': {
         'sources': [
           '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_source_set.\\"cppgc_base.*?sources = ")',
+        ],
+        'conditions': [
+          ['v8_use_perfetto==1', {
+            'sources': [
+              '<!@pymod_do_main(GN-scraper "<(V8_ROOT)/BUILD.gn"  "v8_source_set.\\"cppgc_base.*?if .v8_use_perfetto.*?sources \\+= ")',
+            ],
+          }],
         ],
       },
     },  # cppgc_base

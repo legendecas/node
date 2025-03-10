@@ -108,6 +108,7 @@
 
         # trace_processor/importers/memory_tracker:graph_processor
         '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/importers/memory_tracker/BUILD.gn" "\\"graph_processor.*?sources = ")',
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/BUILD.gn" "\\"storage_minimal.*?sources = ")',
 
         # tracing:client_api_without_backends
         '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"client_api_without_backends.*?sources = ")',

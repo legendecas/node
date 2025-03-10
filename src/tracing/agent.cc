@@ -45,12 +45,10 @@ std::set<std::string> flatten(
 
 }  // namespace
 
-using v8::platform::tracing::TraceConfig;
-using v8::platform::tracing::TraceWriter;
-using std::string;
-
 Agent::Agent() : tracing_controller_(new TracingController()) {
+#if !defined(V8_USE_PERFETTO)
   tracing_controller_->Initialize(nullptr);
+#endif
 
   CHECK_EQ(uv_loop_init(&tracing_loop_), 0);
   CHECK_EQ(uv_async_init(&tracing_loop_,
@@ -144,7 +142,9 @@ void Agent::StopTracing() {
   // Perform final Flush on TraceBuffer. We don't want the tracing controller
   // to flush the buffer again on destruction of the V8::Platform.
   tracing_controller_->StopTracing();
+#if !defined(V8_USE_PERFETTO)
   tracing_controller_->Initialize(nullptr);
+#endif
   started_ = false;
 
   // Thread should finish when the tracing loop is stopped.
@@ -202,6 +202,7 @@ std::string Agent::GetEnabledCategories() const {
   return categories;
 }
 
+#if !defined(V8_USE_PERFETTO)
 void Agent::AppendTraceEvent(TraceObject* trace_event) {
   for (const auto& id_writer : writers_)
     id_writer.second->AppendTraceEvent(trace_event);
@@ -211,18 +212,22 @@ void Agent::AddMetadataEvent(std::unique_ptr<TraceObject> event) {
   Mutex::ScopedLock lock(metadata_events_mutex_);
   metadata_events_.push_back(std::move(event));
 }
+#endif
 
 void Agent::Flush(bool blocking) {
+#if !defined(V8_USE_PERFETTO)
   {
     Mutex::ScopedLock lock(metadata_events_mutex_);
     for (const auto& event : metadata_events_)
       AppendTraceEvent(event.get());
   }
+#endif
 
   for (const auto& id_writer : writers_)
     id_writer.second->Flush(blocking);
 }
 
+#if !defined(V8_USE_PERFETTO)
 void TracingController::AddMetadataEvent(
     const unsigned char* category_group_enabled,
     const char* name,
@@ -246,6 +251,7 @@ void TracingController::AddMetadataEvent(
   if (node_agent != nullptr)
     node_agent->AddMetadataEvent(std::move(trace_event));
 }
+#endif
 
 }  // namespace tracing
 }  // namespace node

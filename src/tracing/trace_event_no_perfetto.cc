@@ -1,4 +1,4 @@
-#include "tracing/trace_event.h"
+#include "tracing/trace_event_no_perfetto.h"
 #include "node.h"
 
 namespace node {

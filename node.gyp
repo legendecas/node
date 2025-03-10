@@ -178,17 +178,22 @@
       'src/tcp_wrap.cc',
       'src/timers.cc',
       'src/timer_wrap.cc',
-      'src/tracing/agent.cc',
-      'src/tracing/node_trace_buffer.cc',
-      'src/tracing/node_trace_writer.cc',
-      'src/tracing/trace_event.cc',
-      'src/tracing/traced_value.cc',
       'src/tty_wrap.cc',
       'src/udp_wrap.cc',
       'src/util.cc',
       'src/uv.cc',
       'src/quic/cid.cc',
       'src/quic/data.cc',
+
+      # tracing.
+      'src/tracing/agent.cc',
+      'src/tracing/agent.h',
+      'src/tracing/node_trace_buffer.cc',
+      'src/tracing/node_trace_buffer.h',
+      'src/tracing/node_trace_writer.cc',
+      'src/tracing/node_trace_writer.h',
+      'src/tracing/traced_value.cc',
+      'src/tracing/traced_value.h',
       # headers to make for a more pleasant IDE experience
       'src/aliased_buffer.h',
       'src/aliased_buffer-inl.h',
@@ -313,14 +318,9 @@
       'src/string_decoder-inl.h',
       'src/tcp_wrap.h',
       'src/timers.h',
-      'src/tracing/agent.h',
-      'src/tracing/node_trace_buffer.h',
-      'src/tracing/node_trace_writer.h',
-      'src/tracing/trace_event.h',
-      'src/tracing/trace_event_common.h',
-      'src/tracing/traced_value.h',
       'src/timer_wrap.h',
       'src/timer_wrap-inl.h',
+      'src/tracing/trace_event.h',
       'src/tty_wrap.h',
       'src/udp_wrap.h',
       'src/util.h',
@@ -329,6 +329,24 @@
       'src/quic/data.h',
       'src/quic/defs.h',
       'src/quic/guard.h',
+    ],
+    'node_no_perfetto_sources': [
+      'src/tracing/trace_event_no_perfetto.cc',
+      'src/tracing/trace_event_no_perfetto.h',
+      'src/tracing/trace_event_common.h',
+    ],
+    'node_perfetto_sources': [
+      'src/tracing/trace_event_perfetto.cc',
+      'src/tracing/trace_event_perfetto.h',
+    ],
+    'node_no_perfetto_sources': [
+      'src/tracing/trace_event_no_perfetto.cc',
+      'src/tracing/trace_event_no_perfetto.h',
+      'src/tracing/trace_event_common.h',
+    ],
+    'node_perfetto_sources': [
+      'src/tracing/trace_event_perfetto.cc',
+      'src/tracing/trace_event_perfetto.h',
     ],
     'node_crypto_sources': [
       'src/crypto/crypto_aes.cc',
@@ -935,6 +953,18 @@
           'includes' : [ 'src/inspector/node_inspector.gypi' ],
         }, {
           'defines': [ 'HAVE_INSPECTOR=0' ]
+        }],
+        [ 'v8_use_perfetto==1', {
+          'sources': [
+            '<@(node_perfetto_sources)',
+          ],
+          'dependencies': [
+            'deps/perfetto/perfetto.gyp:libperfetto',
+          ],
+        }, {
+          'sources': [
+            '<@(node_no_perfetto_sources)',
+          ],
         }],
         [ 'OS=="win"', {
           'conditions': [

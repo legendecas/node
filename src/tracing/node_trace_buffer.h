@@ -7,6 +7,10 @@
 
 #include <atomic>
 
+#if defined(V8_USE_PERFETTO)
+#error Perfetto has enabled. Use trace_event.h instead.
+#endif
+
 namespace node {
 namespace tracing {
 

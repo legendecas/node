@@ -11,9 +11,8 @@
 #include "node_metadata.h"
 #include "node_platform.h"
 #include "node_options.h"
-#include "tracing/node_trace_writer.h"
 #include "tracing/trace_event.h"
-#include "tracing/traced_value.h"
+#include "tracing/agent.h"
 #include "util.h"
 
 namespace node {
@@ -24,6 +23,7 @@ class NodeTraceStateObserver
     : public v8::TracingController::TraceStateObserver {
  public:
   inline void OnTraceEnabled() override {
+#if !defined(V8_USE_PERFETTO)
     std::string title = GetProcessTitle("");
     if (!title.empty()) {
       // Only emit the metadata event if the title can be retrieved
@@ -69,7 +69,9 @@ struct V8Platform {
     CHECK(!initialized_);
     initialized_ = true;
     tracing_agent_ = std::make_unique<tracing::Agent>();
+#if !defined(V8_USE_PERFETTO)
     node::tracing::TraceEventHelper::SetAgent(tracing_agent_.get());
+#endif
     node::tracing::TracingController* controller =
         tracing_agent_->GetTracingController();
     trace_state_observer_ =
@@ -90,7 +92,9 @@ struct V8Platform {
     if (!initialized_)
       return;
     initialized_ = false;
+#if !defined(V8_USE_PERFETTO)
     node::tracing::TraceEventHelper::SetAgent(nullptr);
+#endif
     StopTracingAgent();
     platform_->Shutdown();
     delete platform_;

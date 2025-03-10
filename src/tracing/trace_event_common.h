@@ -5,6 +5,10 @@
 #ifndef SRC_TRACE_EVENT_COMMON_H
 #define SRC_TRACE_EVENT_COMMON_H
 
+#if defined(V8_USE_PERFETTO)
+#error Perfetto has enabled. Use trace_event.h instead.
+#endif
+
 // This header file defines the set of trace_event macros without specifying
 // how the events actually get collected and stored. If you need to expose trace
 // events to some other universe, you can copy-and-paste this file as well as
