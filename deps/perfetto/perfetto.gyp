@@ -47,6 +47,9 @@
       '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/track_event/BUILD.gn" "sources = ")',
       '<!@pymod_do_main(GN-scraper "<(perfetto_root)/protos/perfetto/trace/interned_data/BUILD.gn" "sources = ")',
     ],
+    'table_header_py_files': [
+      '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/tables/BUILD.gn" "tables_python.*?sources = ")',
+    ],
   },
   'targets': [
     {
@@ -153,7 +156,8 @@
             '<@(proto_cpp_files)',
           ],
           'outputs': [
-            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/cpp" gen <@(proto_cpp_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/cpp" .proto .gen.h <@(proto_cpp_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/cpp" .proto .gen.cc <@(proto_cpp_files))',
           ],
           'process_outputs_as_sources': 1,
           # Refer to deps/perfetto/gn/proto_library.gni for options
@@ -173,7 +177,8 @@
             '<@(proto_zero_files)',
           ],
           'outputs': [
-            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/pbzero" pbzero <@(proto_zero_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/pbzero" .proto .pbzero.h <@(proto_zero_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/pbzero" .proto .pbzero.cc <@(proto_zero_files))',
           ],
           'process_outputs_as_sources': 1,
           # Refer to deps/perfetto/gn/proto_library.gni for options
@@ -193,7 +198,8 @@
             '<@(proto_lite_files)',
           ],
           'outputs': [
-            '<!@pymod_do_main(gen_proto_out . "<(perfetto_gen_root)/lite" pb <@(proto_lite_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/lite" .proto .pb.h <@(proto_lite_files))',
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/lite" .proto .pb.cc <@(proto_lite_files))',
           ],
           'process_outputs_as_sources': 1,
           # Refer to deps/perfetto/gn/proto_library.gni for options
@@ -206,6 +212,26 @@
             '<@(proto_lite_files)',
           ],
           'message': 'Generating proto lite sources'
+        },
+        {
+          'action_name': 'gen_table_headers',
+          'inputs': [
+
+          ],
+          'outputs': [
+            '<!@pymod_do_main(string_replace . "<(perfetto_gen_root)/tables" .py _py.h <@(table_header_py_files))',
+          ],
+          'process_outputs_as_sources': 1,
+          # Refer to deps/perfetto/gn/proto_library.gni for options
+          'action': [
+            '<(python)',
+            'tools/gen_tp_table_headers.py',
+            '--gen-dir',
+            '<(perfetto_gen_root)/tables',
+            '--inputs',
+            '<@(table_header_py_files)',
+          ],
+          'message': 'Generating storage table headers'
         },
       ],
     },
