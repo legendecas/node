@@ -17,7 +17,9 @@ FILES_TO_SYNC = [
     'gn/**',
     'include/**',
     'protos/**',
+    'python/**',
     'src/**',
+    'tools/**',
 
     'BUILD',
     'BUILD.extra',
