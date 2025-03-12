@@ -1,6 +1,4 @@
 import os
-import sys
-import pathlib
 
 def DoMain(args):
   basedir, outdir, from_str, to_str = args[0:4]
