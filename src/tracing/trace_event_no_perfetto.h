@@ -7,6 +7,7 @@
 
 #include "v8-platform.h"
 #include "tracing/agent.h"
+#include "tracing/trace_event_helper.h"
 #include "trace_event_common.h"
 #include <atomic>
 
@@ -313,24 +314,6 @@ namespace tracing {
 const int kZeroNumArgs = 0;
 const decltype(nullptr) kGlobalScope = nullptr;
 const uint64_t kNoId = 0;
-
-class TraceEventHelper {
- public:
-  static v8::TracingController* GetTracingController();
-  static void SetTracingController(v8::TracingController* controller);
-
-  static Agent* GetAgent();
-  static void SetAgent(Agent* agent);
-
-  // static inline const uint8_t* GetCategoryGroupEnabled(const char* group) {
-  //   v8::TracingController* controller = GetTracingController();
-  //   static const uint8_t disabled = 0;
-  //   if (controller == nullptr) [[unlikely]] {
-  //     return &disabled;
-  //   }
-  //   return controller->GetCategoryGroupEnabled(group);
-  // }
-};
 
 // TraceID encapsulates an ID that can either be an integer or pointer. Pointers
 // are by default mangled with the Process ID so that they are unlikely to

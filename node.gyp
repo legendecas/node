@@ -185,15 +185,14 @@
       'src/quic/cid.cc',
       'src/quic/data.cc',
 
-      # tracing.
+      # tracing
       'src/tracing/agent.cc',
       'src/tracing/agent.h',
-      'src/tracing/node_trace_buffer.cc',
-      'src/tracing/node_trace_buffer.h',
-      'src/tracing/node_trace_writer.cc',
-      'src/tracing/node_trace_writer.h',
       'src/tracing/traced_value.cc',
       'src/tracing/traced_value.h',
+      'src/tracing/trace_event_helper.cc',
+      'src/tracing/trace_event_helper.h',
+
       # headers to make for a more pleasant IDE experience
       'src/aliased_buffer.h',
       'src/aliased_buffer-inl.h',
@@ -340,6 +339,10 @@
       'src/tracing/trace_event_perfetto.h',
     ],
     'node_no_perfetto_sources': [
+      'src/tracing/node_trace_buffer.cc',
+      'src/tracing/node_trace_buffer.h',
+      'src/tracing/node_trace_writer.cc',
+      'src/tracing/node_trace_writer.h',
       'src/tracing/trace_event_no_perfetto.cc',
       'src/tracing/trace_event_no_perfetto.h',
       'src/tracing/trace_event_common.h',

@@ -11,6 +11,7 @@
 #include "util-inl.h"
 #include "v8.h"
 #include "libplatform/libplatform.h"
+#include "tracing/agent.h"
 
 struct Argv {
  public:

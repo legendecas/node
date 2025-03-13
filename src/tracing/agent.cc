@@ -2,12 +2,14 @@
 
 #include <string>
 #include "trace_event.h"
-#include "tracing/node_trace_buffer.h"
+// #include "tracing/node_trace_buffer.h"
 #include "debug_utils-inl.h"
 #include "env-inl.h"
 
 namespace node {
 namespace tracing {
+
+using v8::platform::tracing::TraceConfig;
 
 class Agent::ScopedSuspendTracing {
  public:
@@ -85,9 +87,9 @@ void Agent::Start() {
   if (started_)
     return;
 
-  NodeTraceBuffer* trace_buffer_ = new NodeTraceBuffer(
-      NodeTraceBuffer::kBufferChunks, this, &tracing_loop_);
-  tracing_controller_->Initialize(trace_buffer_);
+  // NodeTraceBuffer* trace_buffer_ = new NodeTraceBuffer(
+  //     NodeTraceBuffer::kBufferChunks, this, &tracing_loop_);
+  // tracing_controller_->Initialize(trace_buffer_);
 
   // This thread should be created *after* async handles are created
   // (within NodeTraceWriter and NodeTraceBuffer constructors).

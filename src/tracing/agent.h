@@ -19,15 +19,14 @@ class TracingController;
 namespace node {
 namespace tracing {
 
-using v8::platform::tracing::TraceConfig;
-using v8::platform::tracing::TraceObject;
-
 class Agent;
 
 class AsyncTraceWriter {
  public:
   virtual ~AsyncTraceWriter() = default;
+#if !defined(V8_USE_PERFETTO)
   virtual void AppendTraceEvent(TraceObject* trace_event) = 0;
+#endif
   virtual void Flush(bool blocking) = 0;
   virtual void InitializeOnThread(uv_loop_t* loop) {}
 };
@@ -121,7 +120,7 @@ class Agent {
   // Flushes all writers registered through AddClient().
   void Flush(bool blocking);
 
-  TraceConfig* CreateTraceConfig() const;
+  v8::platform::tracing::TraceConfig* CreateTraceConfig() const;
 
  private:
   friend class AgentWriterHandle;
@@ -156,8 +155,10 @@ class Agent {
   uv_async_t initialize_writer_async_;
   std::set<AsyncTraceWriter*> to_be_initialized_;
 
+#if !defined(V8_USE_PERFETTO)
   Mutex metadata_events_mutex_;
   std::list<std::unique_ptr<TraceObject>> metadata_events_;
+#endif
 };
 
 void AgentWriterHandle::reset() {

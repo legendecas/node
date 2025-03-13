@@ -38,6 +38,10 @@ PERFETTO_DEFINE_CATEGORIES_IN_NAMESPACE(
     perfetto::Category("node.promises.rejections"),
     perfetto::Category("node.threadpoolwork.sync"),
     perfetto::Category("node.threadpoolwork.async"),
+// JavaScript namespaces
+    perfetto::Category("node.console"),
+    perfetto::Category("node.http"),
+    perfetto::Category("node.module_timer"),
   );
 // clang-format on
 

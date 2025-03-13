@@ -1,5 +1,6 @@
 #include "node_test_fixture.h"
 #include "absl/synchronization/mutex.h"
+#include "tracing/trace_event_helper.h"
 #include "cppgc/platform.h"
 
 ArrayBufferUniquePtr NodeZeroIsolateTestFixture::allocator{nullptr, nullptr};

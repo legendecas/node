@@ -156,7 +156,7 @@ static const char* get_fs_func_name_by_type(uv_fs_type req_type) {
 #define FS_SYNC_TRACE_END(syscall, ...)                                        \
   if (GET_TRACE_ENABLED)                                                       \
     TRACE_EVENT_END(                                                           \
-        TRACING_CATEGORY_NODE2(fs, sync), TRACE_NAME(syscall), ##__VA_ARGS__);
+        TRACING_CATEGORY_NODE2(fs, sync), /* TRACE_NAME(syscall), */ ##__VA_ARGS__);
 
 #define FS_ASYNC_TRACE_BEGIN0(fs_type, id)                                     \
   TRACE_EVENT_NESTABLE_ASYNC_BEGIN0(TRACING_CATEGORY_NODE2(fs, async),         \

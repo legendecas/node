@@ -71,7 +71,7 @@ static const char* get_dir_func_name_by_type(uv_fs_type req_type) {
 #define FS_DIR_SYNC_TRACE_END(syscall, ...)                                    \
   if (GET_TRACE_ENABLED)                                                       \
     TRACE_EVENT_END(TRACING_CATEGORY_NODE2(fs_dir, sync),                      \
-                    TRACE_NAME(syscall),                                       \
+                    /* TRACE_NAME(syscall), */                                       \
                     ##__VA_ARGS__);
 
 #define FS_DIR_ASYNC_TRACE_BEGIN0(fs_type, id)                                 \

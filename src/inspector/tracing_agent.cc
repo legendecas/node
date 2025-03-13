@@ -93,12 +93,14 @@ class InspectorTraceWriter : public node::tracing::AsyncTraceWriter {
                                 std::shared_ptr<MainThreadHandle> main_thread)
       : frontend_object_id_(frontend_object_id), main_thread_(main_thread) {}
 
+#if !defined(V8_USE_PERFETTO)
   void AppendTraceEvent(
       v8::platform::tracing::TraceObject* trace_event) override {
     if (!json_writer_)
       json_writer_.reset(TraceWriter::CreateJSONTraceWriter(stream_, "value"));
     json_writer_->AppendTraceEvent(trace_event);
   }
+#endif
 
   void Flush(bool) override {
     if (!json_writer_)
