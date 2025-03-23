@@ -3,6 +3,7 @@
     'perfetto_root': './',
     'perfetto_gen_root': '<(SHARED_INTERMEDIATE_DIR)/perfetto',
     'protobuf_gyp_file': '../protobuf/protobuf.gyp',
+    'jsoncpp_gyp_file': '../jsoncpp/jsoncpp.gyp',
     'zlib_gyp_file': '../zlib/zlib.gyp',
     'absl_gyp_file': '../../tools/v8_gypfiles/abseil.gyp',
     'protoc_exec': '<(PRODUCT_DIR)/<(EXECUTABLE_PREFIX)protoc<(EXECUTABLE_SUFFIX)',
@@ -97,6 +98,7 @@
         'gen_perfetto',
         'gen_perfetto_cc_proto_descriptor',
         '<(absl_gyp_file):abseil',
+        '<(jsoncpp_gyp_file):jsoncpp',
         '<(protobuf_gyp_file):protobuf_lite',
         '<(zlib_gyp_file):zlib',
       ],
@@ -181,6 +183,11 @@
         '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/storage/BUILD.gn" "\\"storage.*?sources = ")',
         # trace_processor/tables
         '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/tables/BUILD.gn" "source_set.\\"tables\\".*?sources = ")',
+
+        # trace_processor:export_json
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/BUILD.gn" "\\"export_json.*?sources = ")',
+        # trace_processor/importers/json
+        '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/trace_processor/importers/json/BUILD.gn" "\\"minimal.*?sources = ")',
 
         # tracing:client_api_without_backends
         '<!@pymod_do_main(GN-scraper "<(perfetto_root)/src/tracing/BUILD.gn" "\\"client_api_without_backends.*?sources = ")',
