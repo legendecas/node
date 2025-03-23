@@ -506,6 +506,11 @@
         },
       ],
       'conditions': [
+        ['v8_use_perfetto==1', {
+          'dependencies': [
+            '<(perfetto_gyp_file):libperfetto',
+          ],
+        }],
         ['want_separate_host_toolset', {
           'dependencies': [
             'generate_bytecode_builtins_list',
