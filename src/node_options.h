@@ -221,6 +221,7 @@ class EnvironmentOptions : public Options {
   bool trace_env_native_stack = false;
   std::string trace_require_module;
   bool extra_info_on_fatal_exception = true;
+  std::string resolve_module_cwd;
   std::string unhandled_rejections;
   std::vector<std::string> userland_loaders;
   bool verify_base_objects =

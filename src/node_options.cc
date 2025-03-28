@@ -185,6 +185,13 @@ void EnvironmentOptions::CheckOptions(std::vector<std::string>* errors,
     errors->push_back("invalid value for --unhandled-rejections");
   }
 
+  if (!resolve_module_cwd.empty() &&
+      resolve_module_cwd != "throw" &&
+      resolve_module_cwd != "warn" &&
+      resolve_module_cwd != "none") {
+    errors->push_back("invalid value for --resolve-module-cwd");
+  }
+
   if (tls_min_v1_3 && tls_max_v1_2) {
     errors->push_back("either --tls-min-v1.3 or --tls-max-v1.2 can be "
                       "used, not both");
@@ -991,6 +998,13 @@ EnvironmentOptionsParser::EnvironmentOptionsParser() {
             &EnvironmentOptions::extra_info_on_fatal_exception,
             kAllowedInEnvvar,
             true);
+  AddOption("--resolve-module-cwd",
+            "define relative module resolution without a parent behavior. Options are 'throw' (raise an error unless "
+            "'unhandledRejection' hook is set), 'warn' (log a warning and resolve with cwd) and 'none' "
+            "(silence warnings and resolve with cwd), (default: "
+            "none)",
+            &EnvironmentOptions::resolve_module_cwd,
+            kAllowedInEnvvar);
   AddOption("--unhandled-rejections",
             "define unhandled rejections behavior. Options are 'strict' "
             "(always raise an error), 'throw' (raise an error unless "
