@@ -87,9 +87,24 @@ void Agent::Start() {
   if (started_)
     return;
 
-  // NodeTraceBuffer* trace_buffer_ = new NodeTraceBuffer(
-  //     NodeTraceBuffer::kBufferChunks, this, &tracing_loop_);
-  // tracing_controller_->Initialize(trace_buffer_);
+#if !defined(V8_USE_PERFETTO)
+  NodeTraceBuffer* trace_buffer_ = new NodeTraceBuffer(
+      NodeTraceBuffer::kBufferChunks, this, &tracing_loop_);
+  tracing_controller_->Initialize(trace_buffer_);
+#else
+  // Set up the in-process backend that the tracing controller will connect
+  // to.
+  perfetto::TracingInitArgs init_args;
+  init_args.backends = perfetto::BackendType::kInProcessBackend;
+  perfetto::Tracing::Initialize(init_args);
+
+  node::TrackEvent::Register();
+
+  trace_file_stream_ = std::make_unique<std::fstream>(
+      "test_perfetto.json",
+      std::ios::out | std::ios::app);
+  tracing_controller_->InitializeForPerfetto(trace_file_stream_.get());
+#endif
 
   // This thread should be created *after* async handles are created
   // (within NodeTraceWriter and NodeTraceBuffer constructors).

@@ -24,6 +24,7 @@
 #include "v8-cppgc.h"
 #include "v8-profiler.h"
 #include "v8-sandbox.h"  // v8::Object::Wrap(), v8::Object::Unwrap()
+#include "tracing/node_traced_values.h"
 
 #include <algorithm>
 #include <atomic>

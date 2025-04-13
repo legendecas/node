@@ -549,7 +549,7 @@
               "PERFETTO_TP_PERCENTILE=false" \
               "PERFETTO_TP_LINENOISE=false" \
               "PERFETTO_TP_HTTPD=false" \
-              "PERFETTO_TP_JSON=false" \
+              "PERFETTO_TP_JSON=true" \
               "PERFETTO_TP_INSTRUMENTS=false" \
               "PERFETTO_LOCAL_SYMBOLIZER=false" \
               "PERFETTO_ZLIB=true" \

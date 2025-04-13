@@ -961,6 +961,9 @@
           'sources': [
             '<@(node_perfetto_sources)',
           ],
+          'defines': [
+            'PERFETTO_ENABLE_LEGACY_TRACE_EVENTS=1'
+          ],
           'dependencies': [
             'deps/perfetto/perfetto.gyp:libperfetto',
           ],
@@ -1261,6 +1264,9 @@
           'sources!': [ '<@(node_cctest_openssl_sources)' ],
         }],
         [ 'v8_use_perfetto==1', {
+          'defines': [
+            'PERFETTO_ENABLE_LEGACY_TRACE_EVENTS=1'
+          ],
           'dependencies': [
             'deps/perfetto/perfetto.gyp:libperfetto',
           ],
@@ -1482,6 +1488,9 @@
           ],
         }],
         [ 'v8_use_perfetto==1', {
+          'defines': [
+            'PERFETTO_ENABLE_LEGACY_TRACE_EVENTS=1'
+          ],
           'dependencies': [
             'deps/perfetto/perfetto.gyp:libperfetto',
           ],

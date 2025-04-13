@@ -25,7 +25,7 @@
 #include "env-inl.h"
 #include "node_errors.h"
 #include "node_external_reference.h"
-#include "tracing/traced_value.h"
+#include "tracing/node_traced_values.h"
 #include "util-inl.h"
 
 #include "v8.h"

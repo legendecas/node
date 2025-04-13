@@ -111,28 +111,36 @@ struct V8Platform {
   }
 
   inline void StartTracingAgent() {
-    // constexpr auto convert_to_set =
-    //     [](auto& categories) -> std::set<std::string> {
-    //   std::set<std::string> out;
-    //   for (const auto& s : categories) {
-    //     out.emplace(std::string(s.data(), s.size()));
-    //   }
-    //   return out;
-    // };
+    constexpr auto convert_to_set =
+        [](auto& categories) -> std::set<std::string> {
+      std::set<std::string> out;
+      for (const auto& s : categories) {
+        out.emplace(std::string(s.data(), s.size()));
+      }
+      return out;
+    };
     // Attach a new NodeTraceWriter only if this function hasn't been called
     // before.
-    // if (tracing_file_writer_.IsDefaultHandle()) {
-    //   using std::operator""sv;
-    //   auto categories = std::views::split(
-    //       per_process::cli_options->trace_event_categories, ","sv);
+    if (tracing_file_writer_.IsDefaultHandle()) {
+      using std::operator""sv;
+      auto categories = std::views::split(
+          per_process::cli_options->trace_event_categories, ","sv);
 
-    //   tracing_file_writer_ = tracing_agent_->AddClient(
-    //       convert_to_set(categories),
-    //       std::unique_ptr<tracing::AsyncTraceWriter>(
-    //           new tracing::NodeTraceWriter(
-    //               per_process::cli_options->trace_event_file_pattern)),
-    //       tracing::Agent::kUseDefaultCategories);
-    // }
+#if !defined(V8_USE_PERFETTO)
+      tracing_file_writer_ = tracing_agent_->AddClient(
+          convert_to_set(categories),
+          std::unique_ptr<tracing::AsyncTraceWriter>(
+              new tracing::NodeTraceWriter(
+                  per_process::cli_options->trace_event_file_pattern)),
+          tracing::Agent::kUseDefaultCategories);
+#else
+      tracing_file_writer_ = tracing_agent_->AddClient(
+          convert_to_set(categories),
+          std::make_unique<tracing::PerfettoTraceWriter>(),
+          tracing::Agent::kUseDefaultCategories);
+
+#endif
+    }
   }
 
   inline void StopTracingAgent() { tracing_file_writer_.reset(); }

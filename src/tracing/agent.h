@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <unordered_map>
+#include <fstream>
 
 namespace v8 {
 class ConvertableToTraceFormat;
@@ -26,9 +27,23 @@ class AsyncTraceWriter {
   virtual ~AsyncTraceWriter() = default;
 #if !defined(V8_USE_PERFETTO)
   virtual void AppendTraceEvent(TraceObject* trace_event) = 0;
+#else
+  // virtual void AppendString(const std::string& string) = 0;
 #endif
   virtual void Flush(bool blocking) = 0;
   virtual void InitializeOnThread(uv_loop_t* loop) {}
+};
+
+class PerfettoTraceWriter : public AsyncTraceWriter {
+  uv_async_t async_;
+public:
+  // void AppendString(const std::string& string) override {}
+  void Flush(bool blocking) override {}
+  void InitializeOnThread(uv_loop_t* loop) override {
+    uv_async_init(loop, &async_,
+      [](uv_async_t* async) {
+      });
+  }
 };
 
 class TracingController : public v8::platform::tracing::TracingController {
@@ -158,6 +173,8 @@ class Agent {
 #if !defined(V8_USE_PERFETTO)
   Mutex metadata_events_mutex_;
   std::list<std::unique_ptr<TraceObject>> metadata_events_;
+#else
+  std::unique_ptr<std::fstream> trace_file_stream_;
 #endif
 };
 
