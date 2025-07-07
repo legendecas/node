@@ -1579,7 +1579,7 @@ added:
  - v12.17.0
 -->
 
-> Stability: 1 - Experimental
+> Stability: 1.2 - Release candidate
 
 Node.js supports TC39 ECMA-426 [Source Map][] format (it was called Source map
 revision 3 format).
