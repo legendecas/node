@@ -161,83 +161,12 @@ basic tools required to develop for Node.js, the native addon developer
 requires a toolchain that can compile C and C++ code into a binary. In
 addition, depending upon how the native addon is deployed, the _user_ of
 the native addon will also need to have a C/C++ toolchain installed.
+Checkout the [installation instructions][] for platform-specific toolchain
+requirements.
 
-For Linux developers, the necessary C/C++ toolchain packages are readily
-available. [GCC][] is widely used in the Node.js community to build and
-test across a variety of platforms. For many developers, the [LLVM][]
-compiler infrastructure is also a good choice.
-
-For Mac developers, [Xcode][] offers all the required compiler tools.
-However, it is not necessary to install the entire Xcode IDE. The following
-command installs the necessary toolchain:
-
-```bash
-xcode-select --install
-```
-
-For Windows developers, [Visual Studio][] offers all the required compiler
-tools. However, it is not necessary to install the entire Visual Studio
-IDE. The following command installs the necessary toolchain:
-
-```bash
-npm install --global windows-build-tools
-```
-
-The sections below describe the additional tools available for developing
-and deploying Node.js native addons.
-
-### Build tools
-
-Both the tools listed here require that _users_ of the native
-addon have a C/C++ toolchain installed in order to successfully install
-the native addon.
-
-#### node-gyp
-
-[node-gyp][] is a build system based on the [gyp-next][] fork of
-Google's [GYP][] tool and comes bundled with npm. GYP, and therefore node-gyp,
-requires that Python be installed.
-
-Historically, node-gyp has been the tool of choice for building native
-addons. It has widespread adoption and documentation. However, some
-developers have run into limitations in node-gyp.
-
-#### CMake.js
-
-[CMake.js][] is an alternative build system based on [CMake][].
-
-CMake.js is a good choice for projects that already use CMake or for
-developers affected by limitations in node-gyp. [`build_with_cmake`][] is an
-example of a CMake-based native addon project.
-
-### Uploading precompiled binaries
-
-The three tools listed here permit native addon developers and maintainers
-to create and upload binaries to public or private servers. These tools are
-typically integrated with CI/CD build systems like [Travis CI][] and
-[AppVeyor][] to build and upload binaries for a variety of platforms and
-architectures. These binaries are then available for download by users who
-do not need to have a C/C++ toolchain installed.
-
-#### node-pre-gyp
-
-[node-pre-gyp][] is a tool based on node-gyp that adds the ability to
-upload binaries to a server of the developer's choice. node-pre-gyp has
-particularly good support for uploading binaries to Amazon S3.
-
-#### prebuild
-
-[prebuild][] is a tool that supports builds using either node-gyp or
-CMake.js. Unlike node-pre-gyp which supports a variety of servers, prebuild
-uploads binaries only to [GitHub releases][]. prebuild is a good choice for
-GitHub projects using CMake.js.
-
-#### prebuildify
-
-[prebuildify][] is a tool based on node-gyp. The advantage of prebuildify is
-that the built binaries are bundled with the native addon when it's
-uploaded to npm. The binaries are downloaded from npm and are immediately
-available to the module user when the native addon is installed.
+[node-gyp][] is an official build tool based on the [gyp-next][] build system
+generator. For additional build tools support, checkout the
+[Node-API Build Tools][] documentation for references.
 
 ## Usage
 
@@ -6766,18 +6695,12 @@ node_api_get_module_file_name(node_api_basic_env env, const char** result);
 the add-on's file name during loading.
 
 [ABI Stability]: https://nodejs.org/en/docs/guides/abi-stability/
-[AppVeyor]: https://www.appveyor.com
 [C++ Addons]: addons.md
-[CMake]: https://cmake.org
-[CMake.js]: https://github.com/cmake-js/cmake-js
 [ECMAScript Language Specification]: https://tc39.es/ecma262/
 [Error handling]: #error-handling
-[GCC]: https://gcc.gnu.org
-[GYP]: https://gyp.gsrc.io
-[GitHub releases]: https://help.github.com/en/github/administering-a-repository/about-releases
-[LLVM]: https://llvm.org
 [Native Abstractions for Node.js]: https://github.com/nodejs/nan
 [Node-API Media]: https://github.com/nodejs/abi-stable-node/blob/HEAD/node-api-media.md
+[Node-API Build Tools]: https://github.com/nodejs/abi-stable-node/blob/HEAD/node-api-build-tools.md
 [Object lifetime management]: #object-lifetime-management
 [Object wrap]: #object-wrap
 [Section Agents]: https://tc39.es/ecma262/#sec-agents
@@ -6806,16 +6729,12 @@ the add-on's file name during loading.
 [Section string type]: https://tc39.es/ecma262/#sec-ecmascript-language-types-string-type
 [Section symbol type]: https://tc39.es/ecma262/#sec-ecmascript-language-types-symbol-type
 [Section typeof operator]: https://tc39.es/ecma262/#sec-typeof-operator
-[Travis CI]: https://travis-ci.org
-[Visual Studio]: https://visualstudio.microsoft.com
 [Working with JavaScript properties]: #working-with-javascript-properties
-[Xcode]: https://developer.apple.com/xcode/
 [`'uncaughtException'`]: process.md#event-uncaughtexception
 [`Number.MAX_SAFE_INTEGER`]: https://tc39.es/ecma262/#sec-number.max_safe_integer
 [`Number.MIN_SAFE_INTEGER`]: https://tc39.es/ecma262/#sec-number.min_safe_integer
 [`Worker`]: worker_threads.md#class-worker
 [`async_hooks.executionAsyncResource()`]: async_hooks.md#async_hooksexecutionasyncresource
-[`build_with_cmake`]: https://github.com/nodejs/node-addon-examples/tree/main/src/8-tooling/build_with_cmake
 [`global`]: globals.md#global
 [`init` hooks]: async_hooks.md#initasyncid-type-triggerasyncid-resource
 [`napi_add_async_cleanup_hook`]: #napi_add_async_cleanup_hook
@@ -6894,9 +6813,7 @@ the add-on's file name during loading.
 [global scope]: globals.md
 [gyp-next]: https://github.com/nodejs/gyp-next
 [language and engine bindings]: https://github.com/nodejs/abi-stable-node/blob/doc/node-api-engine-bindings.md
+[installation instructions]: https://github.com/nodejs/node-gyp#installation
 [module scope]: modules.md#the-module-scope
 [node-gyp]: https://github.com/nodejs/node-gyp
-[node-pre-gyp]: https://github.com/mapbox/node-pre-gyp
-[prebuild]: https://github.com/prebuild/prebuild
-[prebuildify]: https://github.com/prebuild/prebuildify
 [worker threads]: https://nodejs.org/api/worker_threads.html
