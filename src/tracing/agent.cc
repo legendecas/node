@@ -27,6 +27,27 @@ class Agent::ScopedSuspendTracing {
     TraceConfig* config = agent_->CreateTraceConfig();
     if (config != nullptr) {
       controller_->StartTracing(config);
+
+      perfetto::trace_processor::Config processor_config;
+
+      trace_processor_ =
+          perfetto::trace_processor::TraceProcessorStorage::CreateInstance(
+              processor_config);
+
+      ::perfetto::TraceConfig perfetto_trace_config;
+      perfetto_trace_config.add_buffers()->set_size_kb(4096);
+      auto ds_config = perfetto_trace_config.add_data_sources()->mutable_config();
+      ds_config->set_name("track_event");
+      perfetto::protos::gen::TrackEventConfig te_config;
+      te_config.add_disabled_categories("*");
+      for (const auto& category : trace_config->GetEnabledCategories())
+        te_config.add_enabled_categories(category);
+      ds_config->set_track_event_config_raw(te_config.SerializeAsString());
+
+      tracing_session_ =
+          perfetto::Tracing::NewTrace(perfetto::BackendType::kUnspecifiedBackend);
+      tracing_session_->Setup(perfetto_trace_config);
+      tracing_session_->StartBlocking();
     }
   }
 
@@ -138,13 +159,13 @@ AgentWriterHandle Agent::AddClient(
   writers_[id] = std::move(writer);
   categories_[id] = { use_categories->begin(), use_categories->end() };
 
-  {
-    Mutex::ScopedLock lock(initialize_writer_mutex_);
-    to_be_initialized_.insert(raw);
-    uv_async_send(&initialize_writer_async_);
-    while (to_be_initialized_.count(raw) > 0)
-      initialize_writer_condvar_.Wait(lock);
-  }
+  // {
+  //   Mutex::ScopedLock lock(initialize_writer_mutex_);
+  //   to_be_initialized_.insert(raw);
+  //   uv_async_send(&initialize_writer_async_);
+  //   while (to_be_initialized_.count(raw) > 0)
+  //     initialize_writer_condvar_.Wait(lock);
+  // }
 
   return AgentWriterHandle(this, id);
 }
