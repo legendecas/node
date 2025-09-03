@@ -85,7 +85,7 @@ struct V8Platform {
     v8::V8::InitializePlatform(platform_);
   }
   // Make sure V8Platform don not call into Libuv threadpool,
-  // see DefaultProcessExitHandlerInternal in environment.cc
+  // see TearDownOncePerProcess in node.cc
   inline void Dispose() {
     if (!initialized_)
       return;
@@ -172,10 +172,6 @@ inline void StartTracingAgent() {
 
 inline tracing::AgentWriterHandle* GetTracingAgentWriter() {
   return per_process::v8_platform.GetTracingAgentWriter();
-}
-
-inline void DisposePlatform() {
-  per_process::v8_platform.Dispose();
 }
 
 }  // namespace node

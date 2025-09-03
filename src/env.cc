@@ -1886,7 +1886,7 @@ void Environment::Exit(ExitCode exit_code) {
   process_exit_handler_(this, exit_code);
 }
 
-void Environment::stop_sub_worker_contexts() {
+void Environment::StopSubWorkerContexts() {
   DCHECK_EQ(Isolate::GetCurrent(), isolate());
 
   while (!sub_worker_contexts_.empty()) {

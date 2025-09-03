@@ -518,7 +518,7 @@ void FreeEnvironment(Environment* env) {
     // above.
     env->set_can_call_into_js(false);
     env->set_stopping(true);
-    env->stop_sub_worker_contexts();
+    env->StopSubWorkerContexts();
     env->RunCleanup();
     RunAtExit(env);
   }
@@ -994,23 +994,10 @@ ThreadId AllocateEnvironmentThreadId() {
 void DefaultProcessExitHandlerInternal(Environment* env, ExitCode exit_code) {
   env->set_stopping(true);
   env->set_can_call_into_js(false);
-  env->stop_sub_worker_contexts();
+  env->StopSubWorkerContexts();
   env->isolate()->DumpAndResetStats();
-  // The tracing agent could be in the process of writing data using the
-  // threadpool. Stop it before shutting down libuv. The rest of the tracing
-  // agent disposal will be performed in DisposePlatform().
-  per_process::v8_platform.StopTracingAgent();
-  // When the process exits, the tasks in the thread pool may also need to
-  // access the data of V8Platform, such as trace agent, or a field
-  // added in the future. So make sure the thread pool exits first.
-  // And make sure V8Platform don not call into Libuv threadpool, see Dispose
-  // in node_v8_platform-inl.h
-  uv_library_shutdown();
-  DisposePlatform();
 
-#if HAVE_OPENSSL
-  crypto::CleanupCachedRootCertificates();
-#endif  // HAVE_OPENSSL
+  node::TearDownOncePerProcess();
 
   Exit(exit_code);
 }

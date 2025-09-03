@@ -814,7 +814,7 @@ class Environment final : public MemoryRetainer {
   Environment* worker_parent_env() const;
   inline void add_sub_worker_context(worker::Worker* context);
   inline void remove_sub_worker_context(worker::Worker* context);
-  void stop_sub_worker_contexts();
+  void StopSubWorkerContexts();
   template <typename Fn>
   inline void ForEachWorker(Fn&& iterator);
   // Determine if the environment is stopping. This getter is thread-safe.

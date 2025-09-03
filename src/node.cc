@@ -1333,6 +1333,11 @@ void TearDownOncePerProcess() {
   }
 #endif
 
+  // The tracing agent could be in the process of writing data using the
+  // threadpool. Stop it before shutting down libuv. The rest of the tracing
+  // agent disposal will be performed in DisposePlatform().
+  per_process::v8_platform.StopTracingAgent();
+
   if (!(flags & ProcessInitializationFlags::kNoInitializeNodeV8Platform)) {
     V8::DisposePlatform();
     // uv_run cannot be called from the time before the beforeExit callback
@@ -1343,6 +1348,12 @@ void TearDownOncePerProcess() {
     // will never be fully cleaned up.
     per_process::v8_platform.Dispose();
   }
+  // When the process exits, the tasks in the thread pool may also need to
+  // access the data of V8Platform, such as trace agent, or a field
+  // added in the future. So make sure the thread pool exits first.
+  // And make sure V8Platform don not call into Libuv threadpool, see Dispose
+  // in node_v8_platform-inl.h
+  uv_library_shutdown();
 
 #if HAVE_OPENSSL
   crypto::CleanupCachedRootCertificates();
