@@ -25,7 +25,7 @@ async function testModuleWrap() {
   const foo = new ModuleWrap('foo', undefined, 'export * from "bar";', 0, 0);
   const bar = new ModuleWrap('bar', undefined, 'export const five = 5', 0, 0);
 
-  const moduleRequests = foo.getModuleRequests();
+  const moduleRequests = foo.moduleRequests;
   assert.strictEqual(moduleRequests.length, 1);
   assert.strictEqual(moduleRequests[0].specifier, 'bar');
 
@@ -36,7 +36,7 @@ async function testModuleWrap() {
   assert.strictEqual(foo.getNamespace().five, 5);
 
   // Check that the module requests are the same after linking, instantiate, and evaluation.
-  assert.deepStrictEqual(moduleRequests, foo.getModuleRequests());
+  assert.strictEqual(moduleRequests, foo.moduleRequests);
 }
 
 // Verify that linking two module with a same ModuleCacheKey throws an error.
@@ -48,7 +48,7 @@ function testLinkMismatch() {
   const bar1 = new ModuleWrap('bar', undefined, 'export const five = 5', 0, 0);
   const bar2 = new ModuleWrap('bar', undefined, 'export const six = 6', 0, 0);
 
-  const moduleRequests = foo.getModuleRequests();
+  const moduleRequests = foo.moduleRequests;
   assert.strictEqual(moduleRequests.length, 2);
   assert.strictEqual(moduleRequests[0].specifier, moduleRequests[1].specifier);
   assert.throws(() => {

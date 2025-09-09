@@ -166,11 +166,13 @@ class ModuleWrap : public BaseObject {
   ~ModuleWrap() override;
 
   static void New(const v8::FunctionCallbackInfo<v8::Value>& args);
-  static void GetModuleRequests(
-      const v8::FunctionCallbackInfo<v8::Value>& args);
   static void InstantiateSync(const v8::FunctionCallbackInfo<v8::Value>& args);
   static void EvaluateSync(const v8::FunctionCallbackInfo<v8::Value>& args);
   static void GetNamespaceSync(const v8::FunctionCallbackInfo<v8::Value>& args);
+
+  static void GetModuleRequests(
+      v8::Local<v8::Name> property,
+      const v8::PropertyCallbackInfo<v8::Value>& args);
   static void SetModuleSourceObject(
       const v8::FunctionCallbackInfo<v8::Value>& args);
   static void GetModuleSourceObject(

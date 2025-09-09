@@ -56,6 +56,7 @@ using v8::ObjectTemplate;
 using v8::PrimitiveArray;
 using v8::Promise;
 using v8::PromiseRejectEvent;
+using v8::PropertyCallbackInfo;
 using v8::ScriptCompiler;
 using v8::ScriptOrigin;
 using v8::String;
@@ -616,7 +617,8 @@ static Local<Array> createModuleRequestsContainer(
   return scope.Escape(Array::New(isolate, requests.data(), requests.size()));
 }
 
-void ModuleWrap::GetModuleRequests(const FunctionCallbackInfo<Value>& args) {
+void ModuleWrap::GetModuleRequests(Local<Name> property,
+                                   const PropertyCallbackInfo<Value>& args) {
   Realm* realm = Realm::GetCurrent(args);
   Isolate* isolate = args.GetIsolate();
   Local<Object> that = args.This();
@@ -1416,7 +1418,6 @@ void ModuleWrap::CreatePerIsolateProperties(IsolateData* isolate_data,
       ModuleWrap::kInternalFieldCount);
 
   SetProtoMethod(isolate, tpl, "link", Link);
-  SetProtoMethod(isolate, tpl, "getModuleRequests", GetModuleRequests);
   SetProtoMethod(isolate, tpl, "instantiateSync", InstantiateSync);
   SetProtoMethod(isolate, tpl, "evaluateSync", EvaluateSync);
   SetProtoMethod(isolate, tpl, "getNamespaceSync", GetNamespaceSync);
@@ -1431,6 +1432,10 @@ void ModuleWrap::CreatePerIsolateProperties(IsolateData* isolate_data,
   SetProtoMethodNoSideEffect(isolate, tpl, "getStatus", GetStatus);
   SetProtoMethodNoSideEffect(isolate, tpl, "isGraphAsync", IsGraphAsync);
   SetProtoMethodNoSideEffect(isolate, tpl, "getError", GetError);
+
+  tpl->InstanceTemplate()->SetLazyDataProperty(
+      FIXED_ONE_BYTE_STRING(isolate, "moduleRequests"), GetModuleRequests);
+
   SetConstructorFunction(isolate, target, "ModuleWrap", tpl);
   isolate_data->set_module_wrap_constructor_template(tpl);
 
