@@ -89,7 +89,16 @@ void PromiseRejectCallback(PromiseRejectMessage message) {
     value = Undefined(isolate);
   }
 
-  Local<Value> args[] = { type, promise, value };
+  Local<Value> rejection_site;
+  if (event == kPromiseRejectWithNoHandler) {
+    // Create a dummy error to capture the stack trace where the rejection
+    // actually happened.
+    rejection_site = ERR_UNHANDLED_REJECTION(isolate);
+  } else {
+    rejection_site = Undefined(isolate);
+  }
+
+  Local<Value> args[] = {type, promise, value, rejection_site};
 
   double async_id = AsyncWrap::kInvalidAsyncId;
   double trigger_async_id = AsyncWrap::kInvalidAsyncId;
